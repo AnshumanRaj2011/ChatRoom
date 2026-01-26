@@ -3,13 +3,14 @@ import { getDatabase, ref, push, onChildAdded, remove }
 from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
+  authDomain: "chatroom-37278.firebaseapp.com",
+  databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com",
+  projectId: "chatroom-37278",
+  storageBucket: "chatroom-37278.firebasestorage.app",
+  messagingSenderId: "738726516362",
+  appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73",
+  measurementId: "G-VDBR1MFW33"
 };
 
 const app = initializeApp(firebaseConfig);
