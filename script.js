@@ -1,5 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+import {
   getDatabase,
   ref,
   push,
@@ -8,7 +16,7 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* 🔥 Firebase Config */
+/* 🔥 CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -19,94 +27,107 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* Init Firebase */
+/* INIT */
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getDatabase(app);
+
+const provider = new GoogleAuthProvider();
 const messagesRef = ref(db, "messages");
 
-/* DOM */
+const adminEmail = "nibha120416@gmail.com"; // 👑 CHANGE THIS
+
+/* UI */
+const loginScreen = document.getElementById("login-screen");
+const chatScreen = document.getElementById("chat-screen");
 const messagesDiv = document.getElementById("messages");
-const form = document.getElementById("message-form");
-const input = document.getElementById("message-input");
+const userName = document.getElementById("user-name");
+
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
 
-/* Multi-select storage */
-const selectedKeys = new Set();
+let currentUser = null;
+const selected = new Set();
 
-/* Load messages */
-onChildAdded(messagesRef, (snapshot) => {
-  const msg = snapshot.val();
-  const key = snapshot.key;
+/* LOGIN */
+document.getElementById("google-login").onclick = () =>
+  signInWithPopup(auth, provider);
 
+document.getElementById("logout").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    userName.textContent =
+      user.displayName +
+      (user.email === adminEmail ? " 👑" : "");
+
+    loginScreen.classList.add("hidden");
+    chatScreen.classList.remove("hidden");
+  } else {
+    loginScreen.classList.remove("hidden");
+    chatScreen.classList.add("hidden");
+  }
+});
+
+/* LOAD MESSAGES */
+onChildAdded(messagesRef, snap => {
+  const m = snap.val();
   const div = document.createElement("div");
-  div.className = "message";
-  div.dataset.key = key;
+  div.className =
+    "message " + (m.uid === currentUser?.uid ? "mine" : "other");
+  div.dataset.key = snap.key;
 
-  const textDiv = document.createElement("div");
-  textDiv.textContent = msg.text;
-
-  const timeDiv = document.createElement("div");
-  timeDiv.className = "message-time";
-  timeDiv.textContent = new Date(msg.time).toLocaleString();
-
-  div.appendChild(textDiv);
-  div.appendChild(timeDiv);
+  div.innerHTML = `
+    <div>${m.text}</div>
+    <div class="time">${new Date(m.time).toLocaleString()}</div>
+  `;
 
   div.onclick = () => {
-    if (selectedKeys.has(key)) {
-      selectedKeys.delete(key);
-      div.classList.remove("selected");
-    } else {
-      selectedKeys.add(key);
-      div.classList.add("selected");
-    }
+    if (m.uid !== currentUser.uid && currentUser.email !== adminEmail)
+      return;
+
+    div.classList.toggle("selected");
+    div.classList.contains("selected")
+      ? selected.add(snap.key)
+      : selected.delete(snap.key);
   };
 
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* Remove message from UI */
-onChildRemoved(messagesRef, (snapshot) => {
-  const el = document.querySelector(`[data-key="${snapshot.key}"]`);
-  if (el) el.remove();
-  selectedKeys.delete(snapshot.key);
+/* REMOVE UI */
+onChildRemoved(messagesRef, snap => {
+  document.querySelector(`[data-key="${snap.key}"]`)?.remove();
 });
 
-/* Send message */
-form.addEventListener("submit", (e) => {
+/* SEND */
+document.getElementById("message-form").onsubmit = e => {
   e.preventDefault();
-  const text = input.value.trim();
-  if (!text) return;
+  const input = document.getElementById("message-input");
+  if (!input.value) return;
 
   push(messagesRef, {
-    text: text,
+    text: input.value,
+    uid: currentUser.uid,
+    name: currentUser.displayName,
     time: Date.now()
   });
 
   input.value = "";
-});
-
-/* Delete selected messages */
-deleteBtn.onclick = () => {
-  if (selectedKeys.size === 0) {
-    alert("Select messages to delete");
-    return;
-  }
-
-  selectedKeys.forEach(key => {
-    remove(ref(db, "messages/" + key));
-  });
-
-  selectedKeys.clear();
 };
 
-/* Clear all messages */
+/* DELETE SELECTED */
+deleteBtn.onclick = () => {
+  selected.forEach(k => remove(ref(db, "messages/" + k)));
+  selected.clear();
+};
+
+/* ADMIN CLEAR */
 clearBtn.onclick = () => {
-  if (confirm("Delete ALL messages?")) {
+  if (currentUser.email === adminEmail && confirm("Clear all?")) {
     remove(messagesRef);
-    messagesDiv.innerHTML = "";
-    selectedKeys.clear();
   }
+};  }
 };
