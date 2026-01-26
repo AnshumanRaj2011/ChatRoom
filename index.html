@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChatRoom</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,9 +15,7 @@
 </div>
 
 <!-- CHAT SCREEN -->
-<div id="chat-container" style="display:none;">
-
-  <!-- TOP HEADER -->
+<div id="chat-container">
   <div class="header">
     <h3>ChatRoom</h3>
     <img id="profile-icon" />
@@ -26,30 +24,28 @@
   <div id="messages"></div>
 
   <form id="message-form">
-    <input id="message-input" placeholder="Type message..." required>
+    <input id="message-input" placeholder="Type message..." required />
     <button type="submit">Send</button>
   </form>
 
   <div class="controls">
-    <button type="button" id="delete-btn">Delete Selected</button>
-    <button type="button" id="clear-btn">Clear All</button>
+    <button id="delete-btn">Delete Selected</button>
+    <button id="clear-btn">Clear All</button>
   </div>
 </div>
 
-<!-- PROFILE PAGE (HIDDEN) -->
+<!-- PROFILE PAGE -->
 <div id="profile-page">
   <div class="profile-card">
-    <h3>My Profile</h3>
+    <h3>Account Info</h3>
 
-    <img id="profile-photo-large" />
+    <label>Display Name</label>
+    <input id="display-name-input">
 
-    <p><b>Name:</b> <span id="profile-name"></span></p>
-    <p><b>Email:</b> <span id="profile-email"></span></p>
-    <p><b>UID:</b> <span id="profile-uid"></span></p>
+    <label>Birthday</label>
+    <input type="date" id="birthday-input">
 
-    <input id="new-name" placeholder="Change display name">
-    <button id="update-name">Update Name</button>
-
+    <button id="save-profile">Save</button>
     <button id="close-profile">Close</button>
     <button id="logout">Logout</button>
   </div>
