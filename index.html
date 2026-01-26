@@ -4,7 +4,7 @@
   <title>Live Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Firebase COMPAT SDKs -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -15,30 +15,42 @@
       margin: 0;
       padding: 10px;
     }
+
     #chat {
-      height: 80vh;
+      height: 70vh;
       overflow-y: auto;
       background: white;
       padding: 10px;
       border-radius: 10px;
     }
+
     .msg {
-      display: flex;
-      justify-content: space-between;
+      padding: 8px;
       margin: 5px 0;
-      padding: 5px;
       background: #eee;
       border-radius: 5px;
+      cursor: pointer;
     }
-    button {
+
+    .selected {
+      background: #cce5ff;
+      border: 2px solid #007bff;
+    }
+
+    input, button {
+      width: 100%;
       padding: 10px;
       margin-top: 5px;
-      width: 100%;
+      font-size: 16px;
     }
-    .del {
-      color: red;
-      cursor: pointer;
-      margin-left: 10px;
+
+    .actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .actions button {
+      flex: 1;
     }
   </style>
 </head>
@@ -52,6 +64,11 @@
 <input id="msg" placeholder="Type message..." />
 <button onclick="sendMsg()">Send</button>
 
+<div class="actions">
+  <button onclick="deleteSelected()">Delete Selected</button>
+  <button onclick="clearChat()">Clear Chat</button>
+</div>
+
 <script>
   // 🔥 FIREBASE CONFIG
   const firebaseConfig = {
@@ -64,12 +81,13 @@
     appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
   const chat = document.getElementById("chat");
   const msg = document.getElementById("msg");
+
+  let selectedKey = null;
 
   const room = location.hash.substring(1) || "main";
   const chatRef = db.ref("rooms/" + room);
@@ -87,7 +105,7 @@
     msg.value = "";
   }
 
-  // RECEIVE MESSAGE + DELETE BUTTON
+  // LOAD MESSAGES
   chatRef.on("child_added", snap => {
     const data = snap.val();
     const key = snap.key;
@@ -95,27 +113,39 @@
     const div = document.createElement("div");
     div.className = "msg";
     div.id = key;
+    div.textContent = data.text;
 
-    const spanText = document.createElement("span");
-    spanText.textContent = data.text;
-
-    const delBtn = document.createElement("span");
-    delBtn.textContent = "❌";
-    delBtn.className = "del";
-    delBtn.onclick = () => deleteMsg(key);
-
-    div.appendChild(spanText);
-    div.appendChild(delBtn);
+    // SELECT MESSAGE
+    div.onclick = () => {
+      document.querySelectorAll(".msg").forEach(m => m.classList.remove("selected"));
+      div.classList.add("selected");
+      selectedKey = key;
+    };
 
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
   });
 
-  // DELETE MESSAGE
-  function deleteMsg(key) {
-    if (confirm("Delete this message?")) {
-      chatRef.child(key).remove();
-      document.getElementById(key).remove();
+  // DELETE SELECTED MESSAGE
+  function deleteSelected() {
+    if (!selectedKey) {
+      alert("Please select a message first");
+      return;
+    }
+
+    if (confirm("Delete selected message?")) {
+      chatRef.child(selectedKey).remove();
+      document.getElementById(selectedKey)?.remove();
+      selectedKey = null;
+    }
+  }
+
+  // CLEAR CHAT (DELETE ALL)
+  function clearChat() {
+    if (confirm("Clear all chat messages?")) {
+      chatRef.remove();
+      chat.innerHTML = "";
+      selectedKey = null;
     }
   }
 </script>
