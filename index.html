@@ -4,43 +4,45 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChatRoom</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- LOGIN SCREEN -->
-  <div id="login-screen">
-    <h2>Welcome</h2>
-    <button id="google-login">Login with Google</button>
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <h2>Welcome</h2>
+  <button id="google-login">Login with Google</button>
+</div>
+
+<!-- CHAT SCREEN -->
+<div id="chat-container" style="display:none">
+
+  <div class="top-bar">
+    <div class="profile">
+      <img id="user-photo" />
+      <div class="profile-info">
+        <div id="user-name"></div>
+        <div id="user-email"></div>
+        <div id="user-uid"></div>
+      </div>
+    </div>
+    <button id="logout">Logout</button>
   </div>
 
-  <!-- CHAT SCREEN -->
-  <div id="chat-container" style="display:none;">
-    <div class="top-bar">
-  <div class="profile">
-    <img id="user-photo" src="" alt="profile"/>
-    <div class="profile-info">
-      <div id="user-name"></div>
-      <div id="user-email"></div>
-      <div id="user-uid"></div>
-    </div>
-  </div>
-  <button id="logout">Logout</button>
-    </div>
+  <div id="messages"></div>
 
-    <div id="messages"></div>
+  <form id="message-form">
+    <input id="message-input" placeholder="Type message..." required />
+    <button type="submit">Send</button>
+  </form>
 
-    <form id="message-form">
-      <input id="message-input" placeholder="Type message..." />
-      <button type="submit">Send</button>
-    </form>
-
-    <div class="controls">
-      <button id="delete-btn">Delete Selected</button>
-      <button id="clear-btn">Clear All</button>
-    </div>
+  <div class="controls">
+    <button id="delete-btn">Delete Selected</button>
+    <button id="clear-btn">Clear All</button>
   </div>
 
-  <script type="module" src="script.js"></script>
+</div>
+
+<script type="module" src="script.js"></script>
 </body>
 </html>
