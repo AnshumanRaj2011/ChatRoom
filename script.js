@@ -26,7 +26,7 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* Init */
+/* INIT */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
@@ -38,7 +38,11 @@ const loginScreen = document.getElementById("login-screen");
 const chatContainer = document.getElementById("chat-container");
 const googleLoginBtn = document.getElementById("google-login");
 const logoutBtn = document.getElementById("logout");
+
 const userName = document.getElementById("user-name");
+const userEmail = document.getElementById("user-email");
+const userUid = document.getElementById("user-uid");
+const userPhoto = document.getElementById("user-photo");
 
 const messagesDiv = document.getElementById("messages");
 const form = document.getElementById("message-form");
@@ -48,16 +52,10 @@ const clearBtn = document.getElementById("clear-btn");
 
 let selectedKeys = new Set();
 
-/* 🔐 LOGIN */
-googleLoginBtn.onclick = async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    alert(e.message);
-  }
-};
+/* LOGIN */
+googleLoginBtn.onclick = () => signInWithPopup(auth, provider);
 
-/* 🔓 LOGOUT */
+/* LOGOUT */
 logoutBtn.onclick = () => signOut(auth);
 
 /* AUTH STATE */
@@ -65,7 +63,11 @@ onAuthStateChanged(auth, user => {
   if (user) {
     loginScreen.style.display = "none";
     chatContainer.style.display = "block";
+
     userName.textContent = user.displayName;
+    userEmail.textContent = user.email;
+    userUid.textContent = "UID: " + user.uid;
+    userPhoto.src = user.photoURL;
   } else {
     loginScreen.style.display = "block";
     chatContainer.style.display = "none";
@@ -77,8 +79,10 @@ onChildAdded(messagesRef, snap => {
   const m = snap.val();
   const div = document.createElement("div");
   div.className = "message";
-  div.textContent = `${m.user}: ${m.text}`;
   div.dataset.key = snap.key;
+
+  const time = new Date(m.time).toLocaleString();
+  div.innerHTML = `<b>${m.user}</b>: ${m.text}<div class="time">${time}</div>`;
 
   div.onclick = () => {
     div.classList.toggle("selected");
@@ -97,7 +101,7 @@ onChildRemoved(messagesRef, snap => {
   if (el) el.remove();
 });
 
-/* SEND */
+/* SEND MESSAGE */
 form.onsubmit = e => {
   e.preventDefault();
   if (!input.value.trim()) return;
