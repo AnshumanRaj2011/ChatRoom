@@ -13,20 +13,23 @@ import {
   push,
   onChildAdded,
   onChildRemoved,
-  remove
+  remove,
+  set,
+  get
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* Firebase config */
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
   databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com",
   projectId: "chatroom-37278",
+  storageBucket: "chatroom-37278.firebasestorage.app",
   messagingSenderId: "738726516362",
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* Init */
+/* INIT */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
@@ -36,19 +39,10 @@ const messagesRef = ref(db, "messages");
 /* DOM */
 const loginScreen = document.getElementById("login-screen");
 const chatContainer = document.getElementById("chat-container");
-const googleLoginBtn = document.getElementById("google-login");
-
-const profileIcon = document.getElementById("profile-icon");
 const profilePage = document.getElementById("profile-page");
-const closeProfile = document.getElementById("close-profile");
+const profileIcon = document.getElementById("profile-icon");
 
-const profilePhotoLarge = document.getElementById("profile-photo-large");
-const profileName = document.getElementById("profile-name");
-const profileEmail = document.getElementById("profile-email");
-const profileUid = document.getElementById("profile-uid");
-
-const newNameInput = document.getElementById("new-name");
-const updateNameBtn = document.getElementById("update-name");
+const googleLoginBtn = document.getElementById("google-login");
 const logoutBtn = document.getElementById("logout");
 
 const messagesDiv = document.getElementById("messages");
@@ -57,44 +51,55 @@ const input = document.getElementById("message-input");
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
 
+const nameInput = document.getElementById("display-name-input");
+const birthdayInput = document.getElementById("birthday-input");
+const saveProfileBtn = document.getElementById("save-profile");
+const closeProfileBtn = document.getElementById("close-profile");
+
 let selectedKeys = new Set();
 
 /* LOGIN */
 googleLoginBtn.onclick = () => signInWithPopup(auth, provider);
 
 /* AUTH STATE */
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   if (user) {
     loginScreen.style.display = "none";
-    chatContainer.style.display = "flex";
+    chatContainer.style.display = "block";
 
-    const photo =
+    profileIcon.src =
       user.photoURL ||
       `https://ui-avatars.com/api/?name=${user.displayName}`;
 
-    profileIcon.src = photo;
-    profilePhotoLarge.src = photo;
-    profileName.textContent = user.displayName;
-    profileEmail.textContent = user.email;
-    profileUid.textContent = user.uid;
+    nameInput.value = user.displayName || "";
+
+    const snap = await get(ref(db, "users/" + user.uid));
+    if (snap.exists()) birthdayInput.value = snap.val().birthday || "";
   } else {
     loginScreen.style.display = "block";
     chatContainer.style.display = "none";
+    profilePage.style.display = "none";
   }
 });
 
-/* PROFILE PAGE */
+/* PROFILE OPEN / CLOSE */
 profileIcon.onclick = () => profilePage.style.display = "flex";
-closeProfile.onclick = () => profilePage.style.display = "none";
+closeProfileBtn.onclick = () => profilePage.style.display = "none";
 
-/* UPDATE NAME */
-updateNameBtn.onclick = async () => {
-  const name = newNameInput.value.trim();
-  if (!name) return;
+/* SAVE PROFILE */
+saveProfileBtn.onclick = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
 
-  await updateProfile(auth.currentUser, { displayName: name });
-  profileName.textContent = name;
-  newNameInput.value = "";
+  if (nameInput.value.trim()) {
+    await updateProfile(user, { displayName: nameInput.value.trim() });
+  }
+
+  await set(ref(db, "users/" + user.uid), {
+    birthday: birthdayInput.value
+  });
+
+  alert("Profile updated");
 };
 
 /* LOGOUT */
@@ -105,12 +110,8 @@ onChildAdded(messagesRef, snap => {
   const m = snap.val();
   const div = document.createElement("div");
   div.className = "message";
+  div.textContent = `${m.user}: ${m.text}`;
   div.dataset.key = snap.key;
-
-  div.innerHTML = `
-    <b>${m.user}</b>: ${m.text}
-    <div class="time">${new Date(m.time).toLocaleString()}</div>
-  `;
 
   div.onclick = () => {
     div.classList.toggle("selected");
@@ -120,15 +121,15 @@ onChildAdded(messagesRef, snap => {
   };
 
   messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* REMOVE */
+/* REMOVE UI */
 onChildRemoved(messagesRef, snap => {
-  document.querySelector(`[data-key="${snap.key}"]`)?.remove();
+  const el = document.querySelector(`[data-key="${snap.key}"]`);
+  if (el) el.remove();
 });
 
-/* SEND */
+/* SEND MESSAGE */
 form.onsubmit = e => {
   e.preventDefault();
   if (!input.value.trim()) return;
