@@ -5,8 +5,8 @@ import {
 
 /* 🔥 YOUR FIREBASE CONFIG */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  databaseURL: "YOUR_DB_URL"
+  apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
+  databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com"
 };
 
 const app = initializeApp(firebaseConfig);
