@@ -1,29 +1,67 @@
 body {
-  font-family: Arial;
-  background: #f2f2f2;
+  font-family: Arial, sans-serif;
+  background: #ece5dd;
+  margin: 0;
   padding: 10px;
 }
 
+#auth, #app {
+  max-width: 420px;
+  margin: auto;
+}
+
 input, button {
-  padding: 8px;
-  margin: 5px 0;
   width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+}
+
+button {
+  background: #25d366;
+  border: none;
+  color: white;
 }
 
 #app {
   display: none;
 }
 
-.user {
-  background: white;
-  padding: 8px;
-  margin: 5px 0;
-  border-radius: 5px;
+.top {
+  display: flex;
+  gap: 5px;
 }
 
-.message {
-  background: #dcf8c6;
+#users div {
+  background: white;
+  padding: 8px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#messages {
+  background: #fff;
+  height: 300px;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.msg {
   padding: 6px;
   margin: 4px 0;
   border-radius: 6px;
+  background: #dcf8c6;
+}
+
+.msg.other {
+  background: #f1f1f1;
+}
+
+.msg.selected {
+  border: 2px solid red;
+}
+
+.send {
+  display: flex;
+  gap: 5px;
 }
