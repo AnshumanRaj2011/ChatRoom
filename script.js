@@ -8,7 +8,7 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* Firebase config */
+/* 🔥 Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -19,7 +19,7 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* Init */
+/* Init Firebase */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const messagesRef = ref(db, "messages");
@@ -31,34 +31,35 @@ const input = document.getElementById("message-input");
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
 
-/* Store selected messages */
+/* Multi-select storage */
 const selectedKeys = new Set();
-
-/* Format time */
-function formatTime(timestamp) {
-  return new Date(timestamp).toLocaleString();
-}
 
 /* Load messages */
 onChildAdded(messagesRef, (snapshot) => {
   const msg = snapshot.val();
+  const key = snapshot.key;
 
   const div = document.createElement("div");
   div.className = "message";
-  div.dataset.key = snapshot.key;
+  div.dataset.key = key;
 
-  div.innerHTML = `
-    <div class="text">${msg.text}</div>
-    <div class="time">${formatTime(msg.time)}</div>
-  `;
+  const textDiv = document.createElement("div");
+  textDiv.textContent = msg.text;
 
-  /* Toggle multi-select */
+  const timeDiv = document.createElement("div");
+  timeDiv.className = "message-time";
+  timeDiv.textContent = new Date(msg.time).toLocaleString();
+
+  div.appendChild(textDiv);
+  div.appendChild(timeDiv);
+
   div.onclick = () => {
-    div.classList.toggle("selected");
-    if (div.classList.contains("selected")) {
-      selectedKeys.add(snapshot.key);
+    if (selectedKeys.has(key)) {
+      selectedKeys.delete(key);
+      div.classList.remove("selected");
     } else {
-      selectedKeys.delete(snapshot.key);
+      selectedKeys.add(key);
+      div.classList.add("selected");
     }
   };
 
@@ -66,7 +67,7 @@ onChildAdded(messagesRef, (snapshot) => {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* Remove message from UI when deleted */
+/* Remove message from UI */
 onChildRemoved(messagesRef, (snapshot) => {
   const el = document.querySelector(`[data-key="${snapshot.key}"]`);
   if (el) el.remove();
@@ -80,7 +81,7 @@ form.addEventListener("submit", (e) => {
   if (!text) return;
 
   push(messagesRef, {
-    text,
+    text: text,
     time: Date.now()
   });
 
@@ -90,11 +91,11 @@ form.addEventListener("submit", (e) => {
 /* Delete selected messages */
 deleteBtn.onclick = () => {
   if (selectedKeys.size === 0) {
-    alert("Select messages first");
+    alert("Select messages to delete");
     return;
   }
 
-  selectedKeys.forEach((key) => {
+  selectedKeys.forEach(key => {
     remove(ref(db, "messages/" + key));
   });
 
