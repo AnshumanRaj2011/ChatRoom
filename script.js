@@ -18,7 +18,7 @@ import {
   get
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* FIREBASE CONFIG */
+/* CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -29,7 +29,6 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* INIT */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
@@ -40,14 +39,14 @@ const messagesRef = ref(db, "messages");
 const loginScreen = document.getElementById("login-screen");
 const chatContainer = document.getElementById("chat-container");
 const profilePage = document.getElementById("profile-page");
-const profileIcon = document.getElementById("profile-icon");
 
+const profileIcon = document.getElementById("profile-icon");
 const googleLoginBtn = document.getElementById("google-login");
 const logoutBtn = document.getElementById("logout");
 
 const messagesDiv = document.getElementById("messages");
-const form = document.getElementById("message-form");
 const input = document.getElementById("message-input");
+const sendBtn = document.getElementById("send-btn");
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
 
@@ -56,16 +55,16 @@ const birthdayInput = document.getElementById("birthday-input");
 const saveProfileBtn = document.getElementById("save-profile");
 const closeProfileBtn = document.getElementById("close-profile");
 
-let selectedKeys = new Set();
+let selected = new Set();
 
 /* LOGIN */
 googleLoginBtn.onclick = () => signInWithPopup(auth, provider);
 
-/* AUTH STATE */
+/* AUTH */
 onAuthStateChanged(auth, async user => {
   if (user) {
     loginScreen.style.display = "none";
-    chatContainer.style.display = "block";
+    chatContainer.style.display = "flex";
 
     profileIcon.src =
       user.photoURL ||
@@ -76,62 +75,52 @@ onAuthStateChanged(auth, async user => {
     const snap = await get(ref(db, "users/" + user.uid));
     if (snap.exists()) birthdayInput.value = snap.val().birthday || "";
   } else {
-    loginScreen.style.display = "block";
+    loginScreen.style.display = "flex";
     chatContainer.style.display = "none";
-    profilePage.style.display = "none";
   }
 });
 
-/* PROFILE OPEN / CLOSE */
+/* PROFILE */
 profileIcon.onclick = () => profilePage.style.display = "flex";
 closeProfileBtn.onclick = () => profilePage.style.display = "none";
 
-/* SAVE PROFILE */
 saveProfileBtn.onclick = async () => {
   const user = auth.currentUser;
   if (!user) return;
 
-  if (nameInput.value.trim()) {
-    await updateProfile(user, { displayName: nameInput.value.trim() });
-  }
+  await updateProfile(user, { displayName: nameInput.value });
+  await set(ref(db, "users/" + user.uid), { birthday: birthdayInput.value });
 
-  await set(ref(db, "users/" + user.uid), {
-    birthday: birthdayInput.value
-  });
-
-  alert("Profile updated");
+  alert("Updated");
 };
 
-/* LOGOUT */
 logoutBtn.onclick = () => signOut(auth);
 
-/* LOAD MESSAGES */
+/* CHAT */
 onChildAdded(messagesRef, snap => {
   const m = snap.val();
   const div = document.createElement("div");
-  div.className = "message";
+  div.className = "message" + (m.user === auth.currentUser.displayName ? " me" : "");
   div.textContent = `${m.user}: ${m.text}`;
   div.dataset.key = snap.key;
 
   div.onclick = () => {
     div.classList.toggle("selected");
     div.classList.contains("selected")
-      ? selectedKeys.add(snap.key)
-      : selectedKeys.delete(snap.key);
+      ? selected.add(snap.key)
+      : selected.delete(snap.key);
   };
 
   messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* REMOVE UI */
 onChildRemoved(messagesRef, snap => {
-  const el = document.querySelector(`[data-key="${snap.key}"]`);
-  if (el) el.remove();
+  document.querySelector(`[data-key="${snap.key}"]`)?.remove();
 });
 
-/* SEND MESSAGE */
-form.onsubmit = e => {
-  e.preventDefault();
+/* SEND */
+sendBtn.onclick = () => {
   if (!input.value.trim()) return;
 
   push(messagesRef, {
@@ -143,13 +132,13 @@ form.onsubmit = e => {
   input.value = "";
 };
 
-/* DELETE SELECTED */
+/* DELETE */
 deleteBtn.onclick = () => {
-  selectedKeys.forEach(k => remove(ref(db, "messages/" + k)));
-  selectedKeys.clear();
+  selected.forEach(k => remove(ref(db, "messages/" + k)));
+  selected.clear();
 };
 
-/* CLEAR ALL */
+/* CLEAR */
 clearBtn.onclick = () => {
-  if (confirm("Delete all messages?")) remove(messagesRef);
+  if (confirm("Clear chat?")) remove(messagesRef);
 };
