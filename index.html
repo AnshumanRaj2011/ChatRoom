@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Real-Time Chat Room</title>
+  <title>Live Chat Room</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,14 +14,20 @@
     <div id="messages"></div>
 
     <form id="message-form">
-      <input type="text" id="message-input" placeholder="Type your message..." required>
+      <input
+        type="text"
+        id="message-input"
+        placeholder="Type your message..."
+        required
+      />
       <button type="submit">Send</button>
     </form>
 
     <div class="controls">
-  <button type="button" id="delete-btn">Delete Selected</button>
-  <button type="button" id="clear-btn">Clear All</button>
+      <button type="button" id="delete-btn">Delete Selected</button>
+      <button type="button" id="clear-btn">Clear All</button>
     </div>
+  </div>
 
   <script type="module" src="script.js"></script>
 </body>
