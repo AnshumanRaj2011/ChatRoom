@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChatRoom</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
-  <h2>Welcome</h2>
+  <h2>Welcome to ChatRoom</h2>
   <button id="google-login">Login with Google</button>
 </div>
 
 <!-- CHAT SCREEN -->
-<div id="chat-container" style="display:none">
+<div id="chat-container" style="display:none;">
 
   <div class="top-bar">
     <div class="profile">
@@ -29,16 +29,22 @@
     <button id="logout">Logout</button>
   </div>
 
+  <!-- CHANGE DISPLAY NAME -->
+  <div class="edit-name">
+    <input id="new-name" placeholder="Change display name">
+    <button id="update-name">Update</button>
+  </div>
+
   <div id="messages"></div>
 
   <form id="message-form">
-    <input id="message-input" placeholder="Type message..." required />
+    <input id="message-input" placeholder="Type message..." required>
     <button type="submit">Send</button>
   </form>
 
   <div class="controls">
-    <button id="delete-btn">Delete Selected</button>
-    <button id="clear-btn">Clear All</button>
+    <button type="button" id="delete-btn">Delete Selected</button>
+    <button type="button" id="clear-btn">Clear All</button>
   </div>
 
 </div>
