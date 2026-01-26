@@ -1,32 +1,32 @@
-body { 
-  font-family: Arial, sans-serif; 
-  margin: 0; 
-  padding: 20px; 
-  background: #f0f0f0; 
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f0f0f0;
 }
 
-#chat-container { 
-  max-width: 600px; 
-  margin: auto; 
-  background: white; 
-  padding: 20px; 
-  border-radius: 10px; 
-  box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+#chat-container {
+  max-width: 600px;
+  margin: auto;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-#messages { 
-  height: 300px; 
-  overflow-y: auto; 
-  border: 1px solid #ccc; 
-  padding: 10px; 
-  margin-bottom: 10px; 
+#messages {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
-.message { 
-  margin-bottom: 10px; 
-  padding: 5px; 
-  background: #e1f5fe; 
-  border-radius: 5px; 
+.message {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #e1f5fe;
+  border-radius: 5px;
   cursor: pointer;
 }
 
@@ -34,35 +34,32 @@ body {
   background: #ffcccb;
 }
 
-form { 
-  display: flex; 
-  gap: 5px;
-}
-
-input { 
-  flex: 1; 
-  padding: 10px; 
-}
-
-button { 
-  padding: 10px; 
-  background: #007bff; 
-  color: white; 
-  border: none; 
-  cursor: pointer; 
-}
-.message {
-  display: flex;
-  flex-direction: column;
-}
-
-.message .time {
-  font-size: 12px;
+.message-time {
+  font-size: 11px;
   color: #555;
   margin-top: 3px;
 }
 
-.message.selected {
-  background: #ffb3b3;
-  border: 1px solid red;
+form {
+  display: flex;
+  gap: 5px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+}
+
+button {
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
