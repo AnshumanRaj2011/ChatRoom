@@ -6,7 +6,13 @@ import {
 /* 🔥 YOUR FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
-  databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com"
+  authDomain: "chatroom-37278.firebaseapp.com",
+  databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com",
+  projectId: "chatroom-37278",
+  storageBucket: "chatroom-37278.firebasestorage.app",
+  messagingSenderId: "738726516362",
+  appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73",
+  measurementId: "G-VDBR1MFW33"
 };
 
 const app = initializeApp(firebaseConfig);
