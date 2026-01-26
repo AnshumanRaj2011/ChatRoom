@@ -1,60 +1,133 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+/* ==========================
+   ELEMENTS
+========================== */
+const sendBtn = document.getElementById("sendBtn");
+const msgInput = document.getElementById("msgInput");
+const messagesBox = document.getElementById("messages");
+const chatUser = document.getElementById("chatUser");
+const chatItems = document.querySelectorAll(".chat-item");
 
-const firebaseConfig = {
-  apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
-  authDomain: "chatroom-37278.firebaseapp.com",
-  databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com",
-  projectId: "chatroom-37278"
-};
+/* ==========================
+   STATE
+========================== */
+let currentChat = "Ansh Raj";
+let selectedMessages = new Set();
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+/* ==========================
+   INIT
+========================== */
+loadMessages();
 
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
+/* ==========================
+   SEND MESSAGE
+========================== */
+sendBtn.addEventListener("click", sendMessage);
+msgInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
 
-document.getElementById("registerBtn").onclick = async () => {
-  const username = usernameInput.value.trim();
-  const password = passwordInput.value.trim();
+function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
 
-  if (!username || !password) {
-    alert("Fill all fields");
-    return;
+  const msg = {
+    text,
+    type: "sent",
+    time: Date.now()
+  };
+
+  saveMessage(currentChat, msg);
+  addMessageToUI(msg);
+
+  msgInput.value = "";
+  scrollBottom();
+}
+
+/* ==========================
+   UI MESSAGE
+========================== */
+function addMessageToUI(msg, index = null) {
+  const div = document.createElement("div");
+  div.className = `msg ${msg.type}`;
+  div.textContent = msg.text;
+
+  div.onclick = () => toggleSelect(div, index);
+  messagesBox.appendChild(div);
+}
+
+/* ==========================
+   SELECT / DELETE
+========================== */
+function toggleSelect(el, index) {
+  el.classList.toggle("selected");
+
+  if (el.classList.contains("selected")) {
+    selectedMessages.add(el);
+  } else {
+    selectedMessages.delete(el);
   }
+}
 
-  const userRef = ref(db, "users/" + username);
+document.addEventListener("keydown", e => {
+  if (e.key === "Delete") deleteSelected();
+});
 
-  const snap = await get(userRef);
-  if (snap.exists()) {
-    alert("User already exists");
-    return;
-  }
+function deleteSelected() {
+  if (selectedMessages.size === 0) return;
 
-  await set(userRef, { password });
-  alert("REGISTER SUCCESS");
-};
+  const msgs = getMessages(currentChat);
+  const remaining = [];
 
-document.getElementById("loginBtn").onclick = async () => {
-  const username = usernameInput.value.trim();
-  const password = passwordInput.value.trim();
+  [...messagesBox.children].forEach((el, i) => {
+    if (!selectedMessages.has(el)) {
+      remaining.push(msgs[i]);
+    }
+  });
 
-  if (!username || !password) {
-    alert("Fill all fields");
-    return;
-  }
+  localStorage.setItem(currentChat, JSON.stringify(remaining));
+  selectedMessages.clear();
+  loadMessages();
+}
 
-  const snap = await get(ref(db, "users/" + username));
+/* ==========================
+   CHAT SWITCH
+========================== */
+chatItems.forEach(item => {
+  item.addEventListener("click", () => {
+    chatItems.forEach(i => i.classList.remove("active"));
+    item.classList.add("active");
 
-  if (!snap.exists()) {
-    alert("User not found");
-    return;
-  }
+    currentChat = item.textContent;
+    chatUser.textContent = currentChat;
+    selectedMessages.clear();
+    loadMessages();
+  });
+});
 
-  if (snap.val().password !== password) {
-    alert("Wrong password");
-    return;
-  }
+/* ==========================
+   STORAGE
+========================== */
+function saveMessage(chat, msg) {
+  const msgs = getMessages(chat);
+  msgs.push(msg);
+  localStorage.setItem(chat, JSON.stringify(msgs));
+}
 
-  alert("LOGIN SUCCESS");
-};
+function getMessages(chat) {
+  return JSON.parse(localStorage.getItem(chat)) || [];
+}
+
+function loadMessages() {
+  messagesBox.innerHTML = "";
+  const msgs = getMessages(currentChat);
+
+  msgs.forEach((msg, i) => addMessageToUI(msg, i));
+  scrollBottom();
+}
+
+/* ==========================
+   UTILS
+========================== */
+function scrollBottom() {
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+}
