@@ -1,48 +1,70 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
+  background: #ece5dd;
   margin: 0;
-  padding: 20px;
-  background: #f0f0f0;
 }
 
-#chat-container {
+.hidden { display: none; }
+
+#login-screen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#chat-screen {
   max-width: 600px;
   margin: auto;
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  background: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: #075e54;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
 }
 
 #messages {
-  height: 300px;
+  flex: 1;
   overflow-y: auto;
-  border: 1px solid #ccc;
   padding: 10px;
-  margin-bottom: 10px;
 }
 
 .message {
   padding: 8px;
-  margin-bottom: 8px;
-  background: #e1f5fe;
+  margin-bottom: 6px;
   border-radius: 5px;
-  cursor: pointer;
+  max-width: 80%;
 }
 
-.message.selected {
-  background: #ffcccb;
+.mine {
+  background: #dcf8c6;
+  margin-left: auto;
 }
 
-.message-time {
-  font-size: 11px;
-  color: #555;
-  margin-top: 3px;
+.other {
+  background: #f1f0f0;
+}
+
+.selected {
+  border: 2px solid red;
+}
+
+.time {
+  font-size: 10px;
+  color: gray;
 }
 
 form {
   display: flex;
-  gap: 5px;
+  padding: 5px;
 }
 
 input {
@@ -52,14 +74,10 @@ input {
 
 button {
   padding: 10px;
-  background: #007bff;
-  color: white;
-  border: none;
   cursor: pointer;
 }
 
 .controls {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 5px;
 }
