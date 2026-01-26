@@ -1,9 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-  getDatabase, ref, set, get, push, onChildAdded, remove
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* 🔥 YOUR FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -17,6 +14,32 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+document.getElementById("registerBtn").onclick = async () => {
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+
+  console.log("Register clicked", u, p);
+
+  if (!u || !p) return alert("Fill all fields");
+
+  const snap = await get(ref(db, "users/" + u));
+  if (snap.exists()) return alert("User exists");
+
+  await set(ref(db, "users/" + u), { password: p });
+  alert("REGISTER SUCCESS");
+};
+
+document.getElementById("loginBtn").onclick = async () => {
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+
+  const snap = await get(ref(db, "users/" + u));
+  if (!snap.exists()) return alert("No user");
+  if (snap.val().password !== p) return alert("Wrong password");
+
+  alert("LOGIN SUCCESS");
+};
 
 /* DOM */
 const auth = document.getElementById("auth");
