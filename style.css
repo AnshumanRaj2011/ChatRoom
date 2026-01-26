@@ -47,6 +47,17 @@ body {
   font-size: 12px;
 }
 
+.edit-name {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.edit-name input {
+  flex: 1;
+  padding: 6px;
+}
+
 #messages {
   height: 300px;
   overflow-y: auto;
