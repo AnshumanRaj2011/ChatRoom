@@ -51,3 +51,18 @@ button {
   border: none; 
   cursor: pointer; 
 }
+.message {
+  display: flex;
+  flex-direction: column;
+}
+
+.message .time {
+  font-size: 12px;
+  color: #555;
+  margin-top: 3px;
+}
+
+.message.selected {
+  background: #ffb3b3;
+  border: 1px solid red;
+}
