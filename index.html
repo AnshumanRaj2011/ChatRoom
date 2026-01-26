@@ -1,54 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>ChatRoom</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <h2>ChatRoom</h2>
-  <button id="google-login" class="primary-btn">Continue with Google</button>
+<div id="auth">
+  <h2>Login / Register</h2>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+  <button id="registerBtn">Register</button>
 </div>
 
-<!-- CHAT -->
-<div id="chat-container">
-  <div class="chat-header">
-    <span>ChatRoom</span>
-    <img id="profile-icon">
-  </div>
+<div id="app">
+  <input id="search" placeholder="Search users">
+  <div id="users"></div>
 
+  <h3>Chat</h3>
   <div id="messages"></div>
 
-  <div class="chat-input">
-    <input id="message-input" placeholder="Message">
-    <button id="send-btn">➤</button>
-  </div>
-
-  <div class="chat-actions">
-    <button id="delete-btn">Delete</button>
-    <button id="clear-btn">Clear</button>
-  </div>
-</div>
-
-<!-- PROFILE -->
-<div id="profile-page">
-  <div class="profile-box">
-    <h3>Profile</h3>
-
-    <label>Name</label>
-    <input id="display-name-input">
-
-    <label>Birthday</label>
-    <input type="date" id="birthday-input">
-
-    <button id="save-profile" class="primary-btn">Save</button>
-    <button id="close-profile">Close</button>
-    <button id="logout">Logout</button>
-  </div>
+  <input id="msg" placeholder="Message">
+  <button id="send">Send</button>
 </div>
 
 <script type="module" src="script.js"></script>
