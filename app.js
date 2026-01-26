@@ -53,14 +53,32 @@ if (me) {
 registerBtn.onclick = async () => {
   const u = usernameInput.value;
   const p = passwordInput.value;
-  if (!u || !p) return alert("Fill all");
 
-  const snap = await get(ref(db, "users/" + u));
-  if (snap.exists()) return alert("Username exists");
+  console.log("Registering:", u, p);
 
-  await set(ref(db, "users/" + u), { password: p });
-  localStorage.setItem("user", u);
-  location.reload();
+  if (!u || !p) {
+    alert("Fill all fields");
+    return;
+  }
+
+  try {
+    const snap = await get(ref(db, "users/" + u));
+    console.log("User exists?", snap.exists());
+
+    if (snap.exists()) {
+      alert("Username exists");
+      return;
+    }
+
+    await set(ref(db, "users/" + u), { password: p });
+    console.log("User saved");
+
+    localStorage.setItem("user", u);
+    location.reload();
+  } catch (err) {
+    console.error("REGISTER ERROR:", err);
+    alert("Register failed — check console");
+  }
 };
 
 /* LOGIN */
