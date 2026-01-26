@@ -4,7 +4,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
-  signOut
+  signOut,
+  updateProfile
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import {
   getDatabase,
@@ -15,7 +16,7 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* 🔥 Firebase config */
+/* 🔥 Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -44,6 +45,9 @@ const userEmail = document.getElementById("user-email");
 const userUid = document.getElementById("user-uid");
 const userPhoto = document.getElementById("user-photo");
 
+const newNameInput = document.getElementById("new-name");
+const updateNameBtn = document.getElementById("update-name");
+
 const messagesDiv = document.getElementById("messages");
 const form = document.getElementById("message-form");
 const input = document.getElementById("message-input");
@@ -64,15 +68,30 @@ onAuthStateChanged(auth, user => {
     loginScreen.style.display = "none";
     chatContainer.style.display = "block";
 
-    userName.textContent = user.displayName;
+    userName.textContent = user.displayName || "User";
     userEmail.textContent = user.email;
     userUid.textContent = "UID: " + user.uid;
-    userPhoto.src = user.photoURL;
+
+    // FREE profile photo (Google or fallback)
+    userPhoto.src =
+      user.photoURL ||
+      `https://ui-avatars.com/api/?name=${user.displayName}`;
+
   } else {
     loginScreen.style.display = "block";
     chatContainer.style.display = "none";
   }
 });
+
+/* UPDATE DISPLAY NAME */
+updateNameBtn.onclick = async () => {
+  const newName = newNameInput.value.trim();
+  if (!newName) return alert("Enter a name");
+
+  await updateProfile(auth.currentUser, { displayName: newName });
+  userName.textContent = newName;
+  newNameInput.value = "";
+};
 
 /* LOAD MESSAGES */
 onChildAdded(messagesRef, snap => {
@@ -81,8 +100,10 @@ onChildAdded(messagesRef, snap => {
   div.className = "message";
   div.dataset.key = snap.key;
 
-  const time = new Date(m.time).toLocaleString();
-  div.innerHTML = `<b>${m.user}</b>: ${m.text}<div class="time">${time}</div>`;
+  div.innerHTML = `
+    <b>${m.user}</b>: ${m.text}
+    <div class="time">${new Date(m.time).toLocaleString()}</div>
+  `;
 
   div.onclick = () => {
     div.classList.toggle("selected");
@@ -95,10 +116,9 @@ onChildAdded(messagesRef, snap => {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* REMOVE FROM UI */
+/* REMOVE MESSAGE FROM UI */
 onChildRemoved(messagesRef, snap => {
-  const el = document.querySelector(`[data-key="${snap.key}"]`);
-  if (el) el.remove();
+  document.querySelector(`[data-key="${snap.key}"]`)?.remove();
 });
 
 /* SEND MESSAGE */
