@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 10px;
+    }
+    #chat {
+      height: 80vh;
+      overflow-y: auto;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 5px;
+      width: 100%;
+    }
+    .msg {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Live Chat Room</h2>
+<div id="chat"></div>
+
+<input id="msg" placeholder="Type message..." />
+<button onclick="sendMsg()">Send</button>
+
+<script>
+  // 🔴 PASTE YOUR FIREBASE CONFIG HERE
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "XXXX",
+    appId: "XXXX"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  const room = location.hash.substring(1) || "main";
+  const chatRef = db.ref("rooms/" + room);
+
+  function sendMsg() {
+    const text = msg.value;
+    if (text.trim() === "") return;
+
+    chatRef.push({
+      text: text,
+      time: Date.now()
+    });
+    msg.value = "";
+  }
+
+  chatRef.on("child_added", snap => {
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.textContent = snap.val().text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  });
+</script>
+
+</body>
+</html>
