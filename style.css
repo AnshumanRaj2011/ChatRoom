@@ -2,7 +2,7 @@ body {
   font-family: Arial, sans-serif;
   background: #f0f0f0;
   margin: 0;
-  padding: 20px;
+  padding: 0;
 }
 
 /* LOGIN */
@@ -11,65 +11,43 @@ body {
   margin-top: 100px;
 }
 
-/* CHAT */
-#chat-container {
-  max-width: 600px;
-  margin: auto;
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-}
-
-.top-bar {
+/* HEADER */
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #0f766e;
   color: white;
   padding: 10px;
-  border-radius: 6px;
-  margin-bottom: 10px;
 }
 
-.profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.profile img {
-  width: 40px;
-  height: 40px;
+#profile-icon {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  cursor: pointer;
 }
 
-.profile-info {
-  font-size: 12px;
-}
-
-.edit-name {
+/* CHAT */
+#chat-container {
+  max-width: 600px;
+  margin: auto;
+  background: white;
+  height: 100vh;
   display: flex;
-  gap: 5px;
-  margin-bottom: 8px;
-}
-
-.edit-name input {
-  flex: 1;
-  padding: 6px;
+  flex-direction: column;
 }
 
 #messages {
-  height: 300px;
+  flex: 1;
   overflow-y: auto;
-  border: 1px solid #ccc;
   padding: 10px;
-  margin-bottom: 10px;
 }
 
 .message {
+  background: #e1f5fe;
   padding: 6px;
   margin-bottom: 6px;
-  background: #e1f5fe;
   border-radius: 5px;
   cursor: pointer;
 }
@@ -85,7 +63,7 @@ body {
 
 form {
   display: flex;
-  gap: 5px;
+  padding: 5px;
 }
 
 input {
@@ -104,5 +82,44 @@ button {
 .controls {
   display: flex;
   justify-content: space-between;
+  padding: 5px;
+}
+
+/* PROFILE PAGE */
+#profile-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-card {
+  background: white;
+  padding: 20px;
+  width: 300px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+#profile-photo-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.profile-card input {
+  width: 100%;
+  margin-top: 5px;
+  padding: 6px;
+}
+
+.profile-card button {
+  width: 100%;
   margin-top: 5px;
 }
