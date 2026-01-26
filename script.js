@@ -31,7 +31,13 @@ const input = document.getElementById("message-input");
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
 
-let selectedKey = null;
+/* Store selected messages */
+const selectedKeys = new Set();
+
+/* Format time */
+function formatTime(timestamp) {
+  return new Date(timestamp).toLocaleString();
+}
 
 /* Load messages */
 onChildAdded(messagesRef, (snapshot) => {
@@ -39,26 +45,32 @@ onChildAdded(messagesRef, (snapshot) => {
 
   const div = document.createElement("div");
   div.className = "message";
-  div.textContent = msg.text;
   div.dataset.key = snapshot.key;
 
+  div.innerHTML = `
+    <div class="text">${msg.text}</div>
+    <div class="time">${formatTime(msg.time)}</div>
+  `;
+
+  /* Toggle multi-select */
   div.onclick = () => {
-    document
-      .querySelectorAll(".message")
-      .forEach(m => m.classList.remove("selected"));
-    div.classList.add("selected");
-    selectedKey = snapshot.key;
+    div.classList.toggle("selected");
+    if (div.classList.contains("selected")) {
+      selectedKeys.add(snapshot.key);
+    } else {
+      selectedKeys.delete(snapshot.key);
+    }
   };
 
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* 🔥 Remove message from UI when deleted */
+/* Remove message from UI when deleted */
 onChildRemoved(messagesRef, (snapshot) => {
-  const key = snapshot.key;
-  const el = document.querySelector(`[data-key="${key}"]`);
+  const el = document.querySelector(`[data-key="${snapshot.key}"]`);
   if (el) el.remove();
+  selectedKeys.delete(snapshot.key);
 });
 
 /* Send message */
@@ -75,21 +87,25 @@ form.addEventListener("submit", (e) => {
   input.value = "";
 });
 
-/* Delete selected */
+/* Delete selected messages */
 deleteBtn.onclick = () => {
-  if (!selectedKey) {
-    alert("Select a message first");
+  if (selectedKeys.size === 0) {
+    alert("Select messages first");
     return;
   }
-  remove(ref(db, "messages/" + selectedKey));
-  selectedKey = null;
+
+  selectedKeys.forEach((key) => {
+    remove(ref(db, "messages/" + key));
+  });
+
+  selectedKeys.clear();
 };
 
-/* Clear all */
+/* Clear all messages */
 clearBtn.onclick = () => {
-  if (confirm("Delete all messages?")) {
+  if (confirm("Delete ALL messages?")) {
     remove(messagesRef);
     messagesDiv.innerHTML = "";
-    selectedKey = null;
+    selectedKeys.clear();
   }
 };
