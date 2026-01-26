@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- AUTH -->
 <div id="auth">
   <h2>Login / Register</h2>
   <input id="username" placeholder="Username">
@@ -16,17 +17,26 @@
   <button id="registerBtn">Register</button>
 </div>
 
+<!-- APP -->
 <div id="app">
-  <input id="search" placeholder="Search users">
+  <div class="top">
+    <input id="search" placeholder="Search users">
+    <button id="logout">Logout</button>
+  </div>
+
   <div id="users"></div>
 
-  <h3>Chat</h3>
+  <h3 id="chatWith"></h3>
   <div id="messages"></div>
 
-  <input id="msg" placeholder="Message">
-  <button id="send">Send</button>
+  <div class="send">
+    <input id="msg" placeholder="Message">
+    <button id="send">Send</button>
+  </div>
+
+  <button id="delete">Delete Selected</button>
 </div>
 
-<script type="module" src="script.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
