@@ -8,44 +8,44 @@
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="login-screen">
-  <h2>Welcome to ChatRoom</h2>
-  <button id="google-login">Login with Google</button>
+  <h2>ChatRoom</h2>
+  <button id="google-login" class="primary-btn">Continue with Google</button>
 </div>
 
-<!-- CHAT SCREEN -->
+<!-- CHAT -->
 <div id="chat-container">
-  <div class="header">
-    <h3>ChatRoom</h3>
-    <img id="profile-icon" />
+  <div class="chat-header">
+    <span>ChatRoom</span>
+    <img id="profile-icon">
   </div>
 
   <div id="messages"></div>
 
-  <form id="message-form">
-    <input id="message-input" placeholder="Type message..." required />
-    <button type="submit">Send</button>
-  </form>
+  <div class="chat-input">
+    <input id="message-input" placeholder="Message">
+    <button id="send-btn">➤</button>
+  </div>
 
-  <div class="controls">
-    <button id="delete-btn">Delete Selected</button>
-    <button id="clear-btn">Clear All</button>
+  <div class="chat-actions">
+    <button id="delete-btn">Delete</button>
+    <button id="clear-btn">Clear</button>
   </div>
 </div>
 
-<!-- PROFILE PAGE -->
+<!-- PROFILE -->
 <div id="profile-page">
-  <div class="profile-card">
-    <h3>Account Info</h3>
+  <div class="profile-box">
+    <h3>Profile</h3>
 
-    <label>Display Name</label>
+    <label>Name</label>
     <input id="display-name-input">
 
     <label>Birthday</label>
     <input type="date" id="birthday-input">
 
-    <button id="save-profile">Save</button>
+    <button id="save-profile" class="primary-btn">Save</button>
     <button id="close-profile">Close</button>
     <button id="logout">Logout</button>
   </div>
