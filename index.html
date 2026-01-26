@@ -7,14 +7,23 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <div id="chat-container">
-    <h1>Chat Room</h1>
+    <h2>Live Chat Room</h2>
+
     <div id="messages"></div>
+
     <form id="message-form">
       <input type="text" id="message-input" placeholder="Type your message..." required>
       <button type="submit">Send</button>
     </form>
+
+    <div class="controls">
+      <button id="delete-btn">Delete Selected</button>
+      <button id="clear-btn">Clear All</button>
+    </div>
   </div>
+
   <script type="module" src="script.js"></script>
 </body>
 </html>
