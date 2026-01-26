@@ -4,10 +4,11 @@ import {
   ref,
   push,
   onChildAdded,
+  onChildRemoved,
   remove
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* 🔥 Firebase Config (YOUR PROJECT) */
+/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -15,16 +16,15 @@ const firebaseConfig = {
   projectId: "chatroom-37278",
   storageBucket: "chatroom-37278.firebasestorage.app",
   messagingSenderId: "738726516362",
-  appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73",
-  measurementId: "G-VDBR1MFW33"
+  appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* Initialize Firebase */
+/* Init */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const messagesRef = ref(db, "messages");
 
-/* DOM Elements */
+/* DOM */
 const messagesDiv = document.getElementById("messages");
 const form = document.getElementById("message-form");
 const input = document.getElementById("message-input");
@@ -33,7 +33,7 @@ const clearBtn = document.getElementById("clear-btn");
 
 let selectedKey = null;
 
-/* 🔁 Load messages */
+/* Load messages */
 onChildAdded(messagesRef, (snapshot) => {
   const msg = snapshot.val();
 
@@ -42,7 +42,6 @@ onChildAdded(messagesRef, (snapshot) => {
   div.textContent = msg.text;
   div.dataset.key = snapshot.key;
 
-  /* Select message */
   div.onclick = () => {
     document
       .querySelectorAll(".message")
@@ -55,38 +54,42 @@ onChildAdded(messagesRef, (snapshot) => {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* ➤ Send message */
+/* 🔥 Remove message from UI when deleted */
+onChildRemoved(messagesRef, (snapshot) => {
+  const key = snapshot.key;
+  const el = document.querySelector(`[data-key="${key}"]`);
+  if (el) el.remove();
+});
+
+/* Send message */
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const text = input.value.trim();
   if (!text) return;
 
   push(messagesRef, {
-    text: text,
+    text,
     time: Date.now()
   });
 
   input.value = "";
 });
 
-/* ❌ Delete selected message */
-function deleteMessage() {
+/* Delete selected */
+deleteBtn.onclick = () => {
   if (!selectedKey) {
     alert("Select a message first");
     return;
   }
   remove(ref(db, "messages/" + selectedKey));
-  location.reload();
-}
+  selectedKey = null;
+};
 
-/* 🧹 Clear all messages */
-function clearChat() {
+/* Clear all */
+clearBtn.onclick = () => {
   if (confirm("Delete all messages?")) {
     remove(messagesRef);
-    location.reload();
+    messagesDiv.innerHTML = "";
+    selectedKey = null;
   }
-}
-
-/* Button bindings */
-deleteBtn.onclick = deleteMessage;
-clearBtn.onclick = clearChat;
+};
