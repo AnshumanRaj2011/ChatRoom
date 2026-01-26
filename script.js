@@ -3,10 +3,9 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
-  signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
 import {
   getDatabase,
   ref,
@@ -16,7 +15,7 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* 🔥 CONFIG */
+/* 🔥 Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -27,46 +26,49 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* INIT */
+/* Init */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
-
 const provider = new GoogleAuthProvider();
 const messagesRef = ref(db, "messages");
 
-const adminEmail = "nibha120416@gmail.com"; // 👑 CHANGE THIS
-
-/* UI */
+/* DOM */
 const loginScreen = document.getElementById("login-screen");
-const chatScreen = document.getElementById("chat-screen");
-const messagesDiv = document.getElementById("messages");
+const chatContainer = document.getElementById("chat-container");
+const googleLoginBtn = document.getElementById("google-login");
+const logoutBtn = document.getElementById("logout");
 const userName = document.getElementById("user-name");
 
+const messagesDiv = document.getElementById("messages");
+const form = document.getElementById("message-form");
+const input = document.getElementById("message-input");
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
 
-let currentUser = null;
-const selected = new Set();
+let selectedKeys = new Set();
 
-/* LOGIN */
-document.getElementById("google-login").onclick = () =>
-  signInWithPopup(auth, provider);
+/* 🔐 LOGIN */
+googleLoginBtn.onclick = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    alert(e.message);
+  }
+};
 
-document.getElementById("logout").onclick = () => signOut(auth);
+/* 🔓 LOGOUT */
+logoutBtn.onclick = () => signOut(auth);
 
+/* AUTH STATE */
 onAuthStateChanged(auth, user => {
   if (user) {
-    currentUser = user;
-    userName.textContent =
-      user.displayName +
-      (user.email === adminEmail ? " 👑" : "");
-
-    loginScreen.classList.add("hidden");
-    chatScreen.classList.remove("hidden");
+    loginScreen.style.display = "none";
+    chatContainer.style.display = "block";
+    userName.textContent = user.displayName;
   } else {
-    loginScreen.classList.remove("hidden");
-    chatScreen.classList.add("hidden");
+    loginScreen.style.display = "block";
+    chatContainer.style.display = "none";
   }
 });
 
@@ -74,44 +76,35 @@ onAuthStateChanged(auth, user => {
 onChildAdded(messagesRef, snap => {
   const m = snap.val();
   const div = document.createElement("div");
-  div.className =
-    "message " + (m.uid === currentUser?.uid ? "mine" : "other");
+  div.className = "message";
+  div.textContent = `${m.user}: ${m.text}`;
   div.dataset.key = snap.key;
 
-  div.innerHTML = `
-    <div>${m.text}</div>
-    <div class="time">${new Date(m.time).toLocaleString()}</div>
-  `;
-
   div.onclick = () => {
-    if (m.uid !== currentUser.uid && currentUser.email !== adminEmail)
-      return;
-
     div.classList.toggle("selected");
     div.classList.contains("selected")
-      ? selected.add(snap.key)
-      : selected.delete(snap.key);
+      ? selectedKeys.add(snap.key)
+      : selectedKeys.delete(snap.key);
   };
 
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* REMOVE UI */
+/* REMOVE FROM UI */
 onChildRemoved(messagesRef, snap => {
-  document.querySelector(`[data-key="${snap.key}"]`)?.remove();
+  const el = document.querySelector(`[data-key="${snap.key}"]`);
+  if (el) el.remove();
 });
 
 /* SEND */
-document.getElementById("message-form").onsubmit = e => {
+form.onsubmit = e => {
   e.preventDefault();
-  const input = document.getElementById("message-input");
-  if (!input.value) return;
+  if (!input.value.trim()) return;
 
   push(messagesRef, {
     text: input.value,
-    uid: currentUser.uid,
-    name: currentUser.displayName,
+    user: auth.currentUser.displayName,
     time: Date.now()
   });
 
@@ -120,14 +113,11 @@ document.getElementById("message-form").onsubmit = e => {
 
 /* DELETE SELECTED */
 deleteBtn.onclick = () => {
-  selected.forEach(k => remove(ref(db, "messages/" + k)));
-  selected.clear();
+  selectedKeys.forEach(k => remove(ref(db, "messages/" + k)));
+  selectedKeys.clear();
 };
 
-/* ADMIN CLEAR */
+/* CLEAR ALL */
 clearBtn.onclick = () => {
-  if (currentUser.email === adminEmail && confirm("Clear all?")) {
-    remove(messagesRef);
-  }
-};  }
+  if (confirm("Delete all messages?")) remove(messagesRef);
 };
