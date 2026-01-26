@@ -1,144 +1,109 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut,
-  updateProfile
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import {
-  getDatabase,
-  ref,
-  push,
-  onChildAdded,
-  onChildRemoved,
-  remove,
-  set,
-  get
+  getDatabase, ref, set, get, push, onChildAdded
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
-  authDomain: "chatroom-37278.firebaseapp.com",
-  databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com",
-  projectId: "chatroom-37278",
-  storageBucket: "chatroom-37278.firebasestorage.app",
-  messagingSenderId: "738726516362",
-  appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
+  databaseURL: "https://chatroom-37278-default-rtdb.firebaseio.com"
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getDatabase(app);
-const provider = new GoogleAuthProvider();
-const messagesRef = ref(db, "messages");
+
+let currentUser = localStorage.getItem("user");
+let currentChatUser = null;
 
 /* DOM */
-const loginScreen = document.getElementById("login-screen");
-const chatContainer = document.getElementById("chat-container");
-const profilePage = document.getElementById("profile-page");
+const auth = document.getElementById("auth");
+const appDiv = document.getElementById("app");
 
-const profileIcon = document.getElementById("profile-icon");
-const googleLoginBtn = document.getElementById("google-login");
-const logoutBtn = document.getElementById("logout");
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
 
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+
+const search = document.getElementById("search");
+const usersDiv = document.getElementById("users");
+
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send");
 const messagesDiv = document.getElementById("messages");
-const input = document.getElementById("message-input");
-const sendBtn = document.getElementById("send-btn");
-const deleteBtn = document.getElementById("delete-btn");
-const clearBtn = document.getElementById("clear-btn");
 
-const nameInput = document.getElementById("display-name-input");
-const birthdayInput = document.getElementById("birthday-input");
-const saveProfileBtn = document.getElementById("save-profile");
-const closeProfileBtn = document.getElementById("close-profile");
+/* AUTO LOGIN */
+if (currentUser) {
+  auth.style.display = "none";
+  appDiv.style.display = "block";
+}
 
-let selected = new Set();
+/* REGISTER */
+registerBtn.onclick = async () => {
+  const u = usernameInput.value;
+  const p = passwordInput.value;
+
+  const snap = await get(ref(db, "users/" + u));
+  if (snap.exists()) return alert("Username already exists");
+
+  await set(ref(db, "users/" + u), { password: p });
+  localStorage.setItem("user", u);
+  location.reload();
+};
 
 /* LOGIN */
-googleLoginBtn.onclick = () => signInWithPopup(auth, provider);
+loginBtn.onclick = async () => {
+  const u = usernameInput.value;
+  const p = passwordInput.value;
 
-/* AUTH */
-onAuthStateChanged(auth, async user => {
-  if (user) {
-    loginScreen.style.display = "none";
-    chatContainer.style.display = "flex";
+  const snap = await get(ref(db, "users/" + u));
+  if (!snap.exists()) return alert("User not found");
 
-    profileIcon.src =
-      user.photoURL ||
-      `https://ui-avatars.com/api/?name=${user.displayName}`;
+  if (snap.val().password !== p) return alert("Wrong password");
 
-    nameInput.value = user.displayName || "";
-
-    const snap = await get(ref(db, "users/" + user.uid));
-    if (snap.exists()) birthdayInput.value = snap.val().birthday || "";
-  } else {
-    loginScreen.style.display = "flex";
-    chatContainer.style.display = "none";
-  }
-});
-
-/* PROFILE */
-profileIcon.onclick = () => profilePage.style.display = "flex";
-closeProfileBtn.onclick = () => profilePage.style.display = "none";
-
-saveProfileBtn.onclick = async () => {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  await updateProfile(user, { displayName: nameInput.value });
-  await set(ref(db, "users/" + user.uid), { birthday: birthdayInput.value });
-
-  alert("Updated");
+  localStorage.setItem("user", u);
+  location.reload();
 };
 
-logoutBtn.onclick = () => signOut(auth);
+/* SEARCH USERS */
+search.oninput = async () => {
+  usersDiv.innerHTML = "";
+  const snap = await get(ref(db, "users"));
+  snap.forEach(child => {
+    if (child.key.includes(search.value) && child.key !== currentUser) {
+      const div = document.createElement("div");
+      div.className = "user";
+      div.textContent = child.key;
+      div.onclick = () => openChat(child.key);
+      usersDiv.appendChild(div);
+    }
+  });
+};
 
 /* CHAT */
-onChildAdded(messagesRef, snap => {
-  const m = snap.val();
-  const div = document.createElement("div");
-  div.className = "message" + (m.user === auth.currentUser.displayName ? " me" : "");
-  div.textContent = `${m.user}: ${m.text}`;
-  div.dataset.key = snap.key;
+function openChat(otherUser) {
+  currentChatUser = otherUser;
+  messagesDiv.innerHTML = "";
 
-  div.onclick = () => {
-    div.classList.toggle("selected");
-    div.classList.contains("selected")
-      ? selected.add(snap.key)
-      : selected.delete(snap.key);
-  };
+  const chatId = [currentUser, otherUser].sort().join("_");
+  const chatRef = ref(db, "chats/" + chatId);
 
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-});
+  onChildAdded(chatRef, snap => {
+    const m = snap.val();
+    const div = document.createElement("div");
+    div.className = "message";
+    div.textContent = `${m.from}: ${m.text}`;
+    messagesDiv.appendChild(div);
+  });
+}
 
-onChildRemoved(messagesRef, snap => {
-  document.querySelector(`[data-key="${snap.key}"]`)?.remove();
-});
-
-/* SEND */
 sendBtn.onclick = () => {
-  if (!input.value.trim()) return;
+  if (!currentChatUser) return;
 
-  push(messagesRef, {
-    text: input.value,
-    user: auth.currentUser.displayName,
+  const chatId = [currentUser, currentChatUser].sort().join("_");
+  push(ref(db, "chats/" + chatId), {
+    from: currentUser,
+    text: msgInput.value,
     time: Date.now()
   });
-
-  input.value = "";
-};
-
-/* DELETE */
-deleteBtn.onclick = () => {
-  selected.forEach(k => remove(ref(db, "messages/" + k)));
-  selected.clear();
-};
-
-/* CLEAR */
-clearBtn.onclick = () => {
-  if (confirm("Clear chat?")) remove(messagesRef);
+  msgInput.value = "";
 };
