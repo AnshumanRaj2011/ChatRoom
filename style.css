@@ -81,3 +81,33 @@ button {
   display: flex;
   gap: 5px;
 }
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f766e;
+  color: white;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.profile-info {
+  font-size: 12px;
+}
+
+.profile-info div {
+  line-height: 1.2;
+}
