@@ -17,22 +17,10 @@
 <!-- CHAT SCREEN -->
 <div id="chat-container" style="display:none;">
 
-  <div class="top-bar">
-    <div class="profile">
-      <img id="user-photo" />
-      <div class="profile-info">
-        <div id="user-name"></div>
-        <div id="user-email"></div>
-        <div id="user-uid"></div>
-      </div>
-    </div>
-    <button id="logout">Logout</button>
-  </div>
-
-  <!-- CHANGE DISPLAY NAME -->
-  <div class="edit-name">
-    <input id="new-name" placeholder="Change display name">
-    <button id="update-name">Update</button>
+  <!-- TOP HEADER -->
+  <div class="header">
+    <h3>ChatRoom</h3>
+    <img id="profile-icon" />
   </div>
 
   <div id="messages"></div>
@@ -46,7 +34,25 @@
     <button type="button" id="delete-btn">Delete Selected</button>
     <button type="button" id="clear-btn">Clear All</button>
   </div>
+</div>
 
+<!-- PROFILE PAGE (HIDDEN) -->
+<div id="profile-page">
+  <div class="profile-card">
+    <h3>My Profile</h3>
+
+    <img id="profile-photo-large" />
+
+    <p><b>Name:</b> <span id="profile-name"></span></p>
+    <p><b>Email:</b> <span id="profile-email"></span></p>
+    <p><b>UID:</b> <span id="profile-uid"></span></p>
+
+    <input id="new-name" placeholder="Change display name">
+    <button id="update-name">Update Name</button>
+
+    <button id="close-profile">Close</button>
+    <button id="logout">Logout</button>
+  </div>
 </div>
 
 <script type="module" src="script.js"></script>
