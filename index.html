@@ -1,35 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat App</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Simple Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="app">
+<!-- LOGIN -->
+<div id="loginBox" class="center">
+  <h2>Login</h2>
+  <input id="usernameInput" placeholder="Enter username">
+  <button onclick="login()">Login</button>
+</div>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Chats</h2>
+<!-- CHAT APP -->
+<div id="app" class="hidden">
 
-    <div class="chat-item active">Ansh Raj</div>
-    <div class="chat-item">Nibha Kumari</div>
-    <div class="chat-item">Rahul</div>
+  <div class="top">
+    <span id="me"></span>
+    <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- Chat Area -->
-  <div class="chat">
-    <div class="chat-header">
-      <span id="chatUser">Ansh Raj</span>
-    </div>
+  <input id="search" placeholder="Search people" oninput="searchUser()">
 
-    <div id="messages" class="messages"></div>
+  <div id="userList"></div>
 
-    <div class="input-area">
-      <input type="text" id="msgInput" placeholder="Type a message"/>
-      <button id="sendBtn">Send</button>
+  <div id="chatBox" class="hidden">
+    <div id="chatWith"></div>
+    <div id="messages"></div>
+
+    <div class="send">
+      <input id="msgInput" placeholder="Type message">
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
