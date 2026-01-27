@@ -1,49 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <div class="app">
 
-  <!-- LEFT PANEL -->
+  <!-- Sidebar -->
   <div class="sidebar">
-    <div class="sidebar-header">
-      <div class="profile-circle">A</div>
-      <span class="title">Chats</span>
-    </div>
+    <h2>Chats</h2>
 
-    <input class="search" placeholder="Search user">
-
-    <div class="chat-list">
-      <div class="chat-item active">Ansh Raj</div>
-      <div class="chat-item">Rohit</div>
-      <div class="chat-item">Neha</div>
-    </div>
+    <div class="chat-item active">Ansh Raj</div>
+    <div class="chat-item">Nibha Kumari</div>
+    <div class="chat-item">Rahul</div>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="chat-area">
-
+  <!-- Chat Area -->
+  <div class="chat">
     <div class="chat-header">
-      <div class="profile-circle small">A</div>
       <span id="chatUser">Ansh Raj</span>
     </div>
 
-    <div class="messages" id="messages">
-      <div class="msg received">Hello 👋</div>
-      <div class="msg sent">Hi 😊</div>
-    </div>
+    <div id="messages" class="messages"></div>
 
-    <div class="chat-input">
-      <input id="msgInput" placeholder="Type a message">
-      <button id="sendBtn">➤</button>
+    <div class="input-area">
+      <input type="text" id="msgInput" placeholder="Type a message"/>
+      <button id="sendBtn">Send</button>
     </div>
-
   </div>
 
 </div>
