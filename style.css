@@ -1,75 +1,65 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f0f0f0;
   margin: 0;
+  padding: 20px;
+  background: #f0f0f0;
 }
 
-.center {
-  text-align: center;
-  margin-top: 150px;
-}
-
-input {
-  padding: 10px;
-  width: 80%;
-  margin: 5px;
-}
-
-button {
-  padding: 10px 15px;
-  background: #25d366;
-  border: none;
-  color: white;
-  cursor: pointer;
-}
-
-.hidden {
-  display: none;
-}
-
-.top {
-  background: #075e54;
-  color: white;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-}
-
-#userList div {
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-  cursor: pointer;
-}
-
-#userList div:hover {
-  background: #e0e0e0;
-}
-
-#chatBox {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: white;
+#chat-container {
+  max-width: 600px;
+  margin: auto;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 #messages {
-  height: 200px;
+  height: 300px;
   overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.message {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #e1f5fe;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.message.selected {
+  background: #ffcccb;
+}
+
+.message-time {
+  font-size: 11px;
+  color: #555;
+  margin-top: 3px;
+}
+
+form {
+  display: flex;
+  gap: 5px;
+}
+
+input {
+  flex: 1;
   padding: 10px;
 }
 
-.msg {
-  background: #dcf8c6;
-  padding: 8px;
-  margin: 5px 0;
-  width: fit-content;
-  border-radius: 5px;
+button {
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
 }
 
-.send {
+.controls {
   display: flex;
-}
-
-.send input {
-  flex: 1;
+  gap: 10px;
+  margin-top: 10px;
 }
