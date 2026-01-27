@@ -2,43 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Simple Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Chat Room</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox" class="center">
-  <h2>Login</h2>
-  <input id="usernameInput" placeholder="Enter username">
-  <button onclick="login()">Login</button>
-</div>
+  <div id="chat-container">
+    <h2>Live Chat Room</h2>
 
-<!-- CHAT APP -->
-<div id="app" class="hidden">
-
-  <div class="top">
-    <span id="me"></span>
-    <button onclick="logout()">Logout</button>
-  </div>
-
-  <input id="search" placeholder="Search people" oninput="searchUser()">
-
-  <div id="userList"></div>
-
-  <div id="chatBox" class="hidden">
-    <div id="chatWith"></div>
     <div id="messages"></div>
 
-    <div class="send">
-      <input id="msgInput" placeholder="Type message">
-      <button onclick="sendMessage()">Send</button>
+    <form id="message-form">
+      <input
+        type="text"
+        id="message-input"
+        placeholder="Type your message..."
+        required
+      />
+      <button type="submit">Send</button>
+    </form>
+
+    <div class="controls">
+      <button type="button" id="delete-btn">Delete Selected</button>
+      <button type="button" id="clear-btn">Clear All</button>
     </div>
   </div>
 
-</div>
-
-<script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
