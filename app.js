@@ -1,71 +1,59 @@
-/* ==========================
-   ELEMENTS
-========================== */
 const sendBtn = document.getElementById("sendBtn");
 const msgInput = document.getElementById("msgInput");
 const messagesBox = document.getElementById("messages");
 const chatUser = document.getElementById("chatUser");
 const chatItems = document.querySelectorAll(".chat-item");
 
-/* ==========================
-   STATE
-========================== */
 let currentChat = "Ansh Raj";
 let selectedMessages = new Set();
 
-/* ==========================
-   INIT
-========================== */
 loadMessages();
 
-/* ==========================
-   SEND MESSAGE
-========================== */
-sendBtn.addEventListener("click", sendMessage);
-msgInput.addEventListener("keypress", e => {
+/* SEND MESSAGE */
+sendBtn.onclick = sendMessage;
+msgInput.onkeypress = e => {
   if (e.key === "Enter") sendMessage();
-});
+};
 
 function sendMessage() {
   const text = msgInput.value.trim();
   if (!text) return;
 
-  const msg = {
-    text,
-    type: "sent",
-    time: Date.now()
-  };
+  const msg = { text, time: Date.now() };
+  const msgs = getMessages(currentChat);
+  msgs.push(msg);
+  localStorage.setItem(currentChat, JSON.stringify(msgs));
 
-  saveMessage(currentChat, msg);
-  addMessageToUI(msg);
-
+  addMessage(msg);
   msgInput.value = "";
   scrollBottom();
 }
 
-/* ==========================
-   UI MESSAGE
-========================== */
-function addMessageToUI(msg, index = null) {
+/* LOAD MESSAGES */
+function loadMessages() {
+  messagesBox.innerHTML = "";
+  selectedMessages.clear();
+
+  const msgs = getMessages(currentChat);
+  msgs.forEach((msg, index) => addMessage(msg, index));
+  scrollBottom();
+}
+
+function addMessage(msg, index) {
   const div = document.createElement("div");
-  div.className = `msg ${msg.type}`;
+  div.className = "msg sent";
   div.textContent = msg.text;
 
-  div.onclick = () => toggleSelect(div, index);
+  div.onclick = () => toggleSelect(div);
   messagesBox.appendChild(div);
 }
 
-/* ==========================
-   SELECT / DELETE
-========================== */
-function toggleSelect(el, index) {
+/* SELECT / DELETE */
+function toggleSelect(el) {
   el.classList.toggle("selected");
-
-  if (el.classList.contains("selected")) {
-    selectedMessages.add(el);
-  } else {
-    selectedMessages.delete(el);
-  }
+  el.classList.contains("selected")
+    ? selectedMessages.add(el)
+    : selectedMessages.delete(el);
 }
 
 document.addEventListener("keydown", e => {
@@ -79,55 +67,30 @@ function deleteSelected() {
   const remaining = [];
 
   [...messagesBox.children].forEach((el, i) => {
-    if (!selectedMessages.has(el)) {
-      remaining.push(msgs[i]);
-    }
+    if (!selectedMessages.has(el)) remaining.push(msgs[i]);
   });
 
   localStorage.setItem(currentChat, JSON.stringify(remaining));
-  selectedMessages.clear();
   loadMessages();
 }
 
-/* ==========================
-   CHAT SWITCH
-========================== */
+/* CHAT SWITCH */
 chatItems.forEach(item => {
-  item.addEventListener("click", () => {
+  item.onclick = () => {
     chatItems.forEach(i => i.classList.remove("active"));
     item.classList.add("active");
 
     currentChat = item.textContent;
     chatUser.textContent = currentChat;
-    selectedMessages.clear();
     loadMessages();
-  });
+  };
 });
 
-/* ==========================
-   STORAGE
-========================== */
-function saveMessage(chat, msg) {
-  const msgs = getMessages(chat);
-  msgs.push(msg);
-  localStorage.setItem(chat, JSON.stringify(msgs));
-}
-
+/* STORAGE */
 function getMessages(chat) {
   return JSON.parse(localStorage.getItem(chat)) || [];
 }
 
-function loadMessages() {
-  messagesBox.innerHTML = "";
-  const msgs = getMessages(currentChat);
-
-  msgs.forEach((msg, i) => addMessageToUI(msg, i));
-  scrollBottom();
-}
-
-/* ==========================
-   UTILS
-========================== */
 function scrollBottom() {
   messagesBox.scrollTop = messagesBox.scrollHeight;
 }
