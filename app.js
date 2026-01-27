@@ -1,96 +1,86 @@
-const sendBtn = document.getElementById("sendBtn");
-const msgInput = document.getElementById("msgInput");
-const messagesBox = document.getElementById("messages");
-const chatUser = document.getElementById("chatUser");
-const chatItems = document.querySelectorAll(".chat-item");
+let currentUser = localStorage.getItem("user");
+let chattingWith = null;
 
-let currentChat = "Ansh Raj";
-let selectedMessages = new Set();
+const usersKey = "all_users";
 
-loadMessages();
+if (currentUser) showApp();
 
-/* SEND MESSAGE */
-sendBtn.onclick = sendMessage;
-msgInput.onkeypress = e => {
-  if (e.key === "Enter") sendMessage();
-};
+function login() {
+  const u = document.getElementById("usernameInput").value.trim();
+  if (!u) return alert("Enter username");
 
-function sendMessage() {
-  const text = msgInput.value.trim();
-  if (!text) return;
+  currentUser = u;
+  localStorage.setItem("user", u);
 
-  const msg = { text, time: Date.now() };
-  const msgs = getMessages(currentChat);
-  msgs.push(msg);
-  localStorage.setItem(currentChat, JSON.stringify(msgs));
+  let users = JSON.parse(localStorage.getItem(usersKey)) || [];
+  if (!users.includes(u)) {
+    users.push(u);
+    localStorage.setItem(usersKey, JSON.stringify(users));
+  }
 
-  addMessage(msg);
-  msgInput.value = "";
-  scrollBottom();
+  showApp();
 }
 
-/* LOAD MESSAGES */
-function loadMessages() {
-  messagesBox.innerHTML = "";
-  selectedMessages.clear();
-
-  const msgs = getMessages(currentChat);
-  msgs.forEach((msg, index) => addMessage(msg, index));
-  scrollBottom();
+function logout() {
+  localStorage.removeItem("user");
+  location.reload();
 }
 
-function addMessage(msg, index) {
-  const div = document.createElement("div");
-  div.className = "msg sent";
-  div.textContent = msg.text;
-
-  div.onclick = () => toggleSelect(div);
-  messagesBox.appendChild(div);
+function showApp() {
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("me").innerText = "You: " + currentUser;
 }
 
-/* SELECT / DELETE */
-function toggleSelect(el) {
-  el.classList.toggle("selected");
-  el.classList.contains("selected")
-    ? selectedMessages.add(el)
-    : selectedMessages.delete(el);
+function searchUser() {
+  const q = document.getElementById("search").value.toLowerCase();
+  const list = document.getElementById("userList");
+  list.innerHTML = "";
+
+  let users = JSON.parse(localStorage.getItem(usersKey)) || [];
+  users
+    .filter(u => u !== currentUser && u.toLowerCase().includes(q))
+    .forEach(u => {
+      const d = document.createElement("div");
+      d.innerText = u;
+      d.onclick = () => openChat(u);
+      list.appendChild(d);
+    });
 }
 
-document.addEventListener("keydown", e => {
-  if (e.key === "Delete") deleteSelected();
-});
-
-function deleteSelected() {
-  if (selectedMessages.size === 0) return;
-
-  const msgs = getMessages(currentChat);
-  const remaining = [];
-
-  [...messagesBox.children].forEach((el, i) => {
-    if (!selectedMessages.has(el)) remaining.push(msgs[i]);
-  });
-
-  localStorage.setItem(currentChat, JSON.stringify(remaining));
+function openChat(user) {
+  chattingWith = user;
+  document.getElementById("chatBox").classList.remove("hidden");
+  document.getElementById("chatWith").innerText = "Chat with " + user;
   loadMessages();
 }
 
-/* CHAT SWITCH */
-chatItems.forEach(item => {
-  item.onclick = () => {
-    chatItems.forEach(i => i.classList.remove("active"));
-    item.classList.add("active");
-
-    currentChat = item.textContent;
-    chatUser.textContent = currentChat;
-    loadMessages();
-  };
-});
-
-/* STORAGE */
-function getMessages(chat) {
-  return JSON.parse(localStorage.getItem(chat)) || [];
+function chatKey() {
+  return [currentUser, chattingWith].sort().join("_");
 }
 
-function scrollBottom() {
-  messagesBox.scrollTop = messagesBox.scrollHeight;
+function sendMessage() {
+  const input = document.getElementById("msgInput");
+  if (!input.value) return;
+
+  const key = chatKey();
+  let msgs = JSON.parse(localStorage.getItem(key)) || [];
+  msgs.push({ from: currentUser, text: input.value });
+  localStorage.setItem(key, JSON.stringify(msgs));
+
+  input.value = "";
+  loadMessages();
+}
+
+function loadMessages() {
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+
+  const msgs = JSON.parse(localStorage.getItem(chatKey())) || [];
+  msgs.forEach(m => {
+    const d = document.createElement("div");
+    d.className = "msg";
+    d.innerText = m.from + ": " + m.text;
+    box.appendChild(d);
+  });
 }
