@@ -5,7 +5,8 @@ import {
   push,
   onChildAdded,
   onChildRemoved,
-  remove
+  remove,
+  update
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 /* 🔥 Firebase Config */
@@ -30,6 +31,7 @@ const form = document.getElementById("message-form");
 const input = document.getElementById("message-input");
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
+const editBtn = document.getElementById("edit-btn");
 
 /* Multi-select storage */
 const selectedKeys = new Set();
@@ -44,7 +46,7 @@ onChildAdded(messagesRef, (snapshot) => {
   div.dataset.key = key;
 
   const textDiv = document.createElement("div");
-  textDiv.textContent = msg.text;
+  textDiv.textContent = msg.text + (msg.edited ? " (edited)" : "");
 
   const timeDiv = document.createElement("div");
   timeDiv.className = "message-time";
@@ -87,6 +89,28 @@ form.addEventListener("submit", (e) => {
 
   input.value = "";
 });
+
+/* Edit selected message */
+editBtn.onclick = () => {
+  if (selectedKeys.size !== 1) {
+    alert("Select exactly ONE message to edit");
+    return;
+  }
+
+  const key = Array.from(selectedKeys)[0];
+  const msgDiv = document.querySelector(`[data-key="${key}"]`);
+  const oldText = msgDiv.firstChild.textContent.replace(" (edited)", "");
+
+  const newText = prompt("Edit your message:", oldText);
+  if (!newText || newText.trim() === oldText) return;
+
+  update(ref(db, "messages/" + key), {
+    text: newText.trim(),
+    edited: true
+  });
+
+  selectedKeys.clear();
+};
 
 /* Delete selected messages */
 deleteBtn.onclick = () => {
