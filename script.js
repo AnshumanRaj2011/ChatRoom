@@ -4,12 +4,15 @@ import {
   remove, update, get, set
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 import {
-  getAuth, GoogleAuthProvider,
-  signInWithRedirect, getRedirectResult,
-  onAuthStateChanged, signOut
+  getAuth,
+  GoogleAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-/* Firebase */
+/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -20,6 +23,7 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
+/* Init */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
@@ -36,15 +40,22 @@ const saveUsernameBtn = document.getElementById("save-username-btn");
 const usernameInput = document.getElementById("username-input");
 const logoutBtn = document.getElementById("logout-btn");
 
+const messagesDiv = document.getElementById("messages");
+const form = document.getElementById("message-form");
+const input = document.getElementById("message-input");
+const editBtn = document.getElementById("edit-btn");
+const deleteBtn = document.getElementById("delete-btn");
+
 /* State */
 let currentUID = null;
 let username = null;
+const selectedKeys = new Set();
 
 /* helpers */
 const show = el => el.classList.remove("hidden");
 const hide = el => el.classList.add("hidden");
 
-/* INITIAL STATE — ALWAYS SHOW LOGIN */
+/* Initial UI */
 show(loginModal);
 hide(usernameModal);
 hide(chatContainer);
@@ -54,10 +65,10 @@ googleLoginBtn.onclick = () => {
   signInWithRedirect(auth, provider);
 };
 
-/* Required for redirect */
+/* Handle redirect */
 getRedirectResult(auth).catch(() => {});
 
-/* AUTH STATE */
+/* Auth state */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     show(loginModal);
@@ -66,7 +77,6 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // Logged in
   currentUID = user.uid;
   hide(loginModal);
 
@@ -81,7 +91,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-/* SAVE USERNAME */
+/* Save username */
 saveUsernameBtn.onclick = async () => {
   const u = usernameInput.value.trim().toLowerCase();
 
@@ -104,8 +114,73 @@ saveUsernameBtn.onclick = async () => {
   show(chatContainer);
 };
 
-/* LOGOUT */
+/* Logout */
 logoutBtn.onclick = async () => {
   await signOut(auth);
   location.reload();
+};
+
+/* Load messages */
+onChildAdded(messagesRef, snap => {
+  const msg = snap.val();
+  const key = snap.key;
+
+  const div = document.createElement("div");
+  div.className = "message";
+  div.dataset.key = key;
+
+  div.innerHTML = `
+    <div class="message-user">
+      ${msg.username}${msg.uid === currentUID ? " (You)" : ""}
+    </div>
+    <div>${msg.text}${msg.edited ? " (edited)" : ""}</div>
+    <div class="message-time">${new Date(msg.time).toLocaleString()}</div>
+  `;
+
+  div.onclick = () => {
+    if (msg.uid !== currentUID) return;
+    div.classList.toggle("selected");
+    selectedKeys.has(key) ? selectedKeys.delete(key) : selectedKeys.add(key);
+  };
+
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
+
+/* Send message */
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  if (!input.value.trim()) return;
+
+  push(messagesRef, {
+    uid: currentUID,
+    username,
+    text: input.value.trim(),
+    time: Date.now()
+  });
+
+  input.value = "";
+});
+
+/* Edit */
+editBtn.onclick = () => {
+  if (selectedKeys.size !== 1) return;
+  const key = [...selectedKeys][0];
+  const el = document.querySelector(`[data-key="${key}"]`);
+  const oldText = el.children[1].textContent.replace(" (edited)", "");
+  const newText = prompt("Edit message", oldText);
+  if (!newText) return;
+
+  update(ref(db, "messages/" + key), {
+    text: newText,
+    edited: true
+  });
+
+  selectedKeys.clear();
+};
+
+/* Delete */
+deleteBtn.onclick = () => {
+  selectedKeys.forEach(key => remove(ref(db, "messages/" + key)));
+  selectedKeys.clear();
 };
