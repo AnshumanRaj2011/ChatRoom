@@ -160,8 +160,12 @@ searchInput.addEventListener("input", async () => {
   const snap = await get(usernameRef);
 
   if (!snap.exists()) {
-    searchResults.innerHTML = `<p class="empty-text">User not found</p>`;
-    return;
+  searchResults.innerHTML = `
+    <p class="empty-text">
+      User not found<br>
+      (They may not have created a username yet)
+    </p>`;
+  return;
   }
 
   const uid = snap.val();
