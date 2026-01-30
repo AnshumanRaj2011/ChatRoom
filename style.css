@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #ffb6c1; /* pink background */
+  background: #ffb6c1;
 }
 
 .hidden {
@@ -37,7 +37,7 @@ body {
 
 /* Buttons */
 button {
-  background: #ff0000;
+  background: red;
   color: white;
   border: none;
   padding: 10px 15px;
@@ -47,7 +47,7 @@ button {
 }
 
 button:hover {
-  background: #cc0000;
+  background: darkred;
 }
 
 /* Chat */
