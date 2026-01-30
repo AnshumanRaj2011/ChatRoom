@@ -27,7 +27,7 @@ const firebaseConfig = {
 };
 
 /* ===============================
-   INIT APP
+   INIT
    =============================== */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -41,7 +41,8 @@ const screens = {
   login: document.getElementById("screen-login"),
   username: document.getElementById("screen-username"),
   home: document.getElementById("screen-home"),
-  search: document.getElementById("screen-search")
+  search: document.getElementById("screen-search"),
+  requests: document.getElementById("screen-requests")
 };
 
 function showScreen(name) {
@@ -59,6 +60,10 @@ const logoutBtn = document.getElementById("btn-logout");
 
 const btnSearch = document.getElementById("btn-search");
 const btnBackSearch = document.getElementById("btn-back-search");
+
+const btnRequests = document.getElementById("btn-requests");
+const btnBackRequests = document.getElementById("btn-back-requests");
+
 const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
 
@@ -73,7 +78,7 @@ let currentUID = null;
 showScreen("login");
 
 /* ===============================
-   GOOGLE LOGIN (POPUP)
+   GOOGLE LOGIN
    =============================== */
 googleLoginBtn.onclick = async () => {
   try {
@@ -104,7 +109,7 @@ onAuthStateChanged(auth, async user => {
 });
 
 /* ===============================
-   SAVE USERNAME (NEW USER)
+   SAVE USERNAME
    =============================== */
 saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
@@ -135,7 +140,7 @@ logoutBtn.onclick = async () => {
 };
 
 /* ===============================
-   NAVIGATION: HOME ↔ SEARCH
+   NAVIGATION
    =============================== */
 btnSearch.onclick = () => {
   searchInput.value = "";
@@ -143,12 +148,13 @@ btnSearch.onclick = () => {
   showScreen("search");
 };
 
-btnBackSearch.onclick = () => {
-  showScreen("home");
-};
+btnBackSearch.onclick = () => showScreen("home");
+
+btnRequests.onclick = () => showScreen("requests");
+btnBackRequests.onclick = () => showScreen("home");
 
 /* ===============================
-   SEARCH USERS BY USERNAME
+   SEARCH USERS (PARTIAL)
    =============================== */
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
@@ -157,7 +163,6 @@ searchInput.addEventListener("input", async () => {
   if (query.length < 2) return;
 
   const snap = await get(ref(db, "usernames"));
-
   if (!snap.exists()) {
     searchResults.innerHTML = `<p class="empty-text">No users found</p>`;
     return;
@@ -173,27 +178,38 @@ searchInput.addEventListener("input", async () => {
 
     found = true;
 
+    const div = document.createElement("div");
+    div.className = "list-item";
+
+    // Self
     if (uid === currentUID) {
-      const selfDiv = document.createElement("div");
-      selfDiv.className = "list-item";
-      selfDiv.innerHTML = `<span>@${username}</span><span>That’s you 🙂</span>`;
-      searchResults.appendChild(selfDiv);
+      div.innerHTML = `<span>@${username}</span><span>That’s you 🙂</span>`;
+      searchResults.appendChild(div);
       return;
     }
 
-    const div = document.createElement("div");
-    div.className = "list-item";
-    div.innerHTML = `
-      <span>@${username}</span>
-      <button class="primary-btn" disabled>Add</button>
-    `;
+    const addBtn = document.createElement("button");
+    addBtn.className = "primary-btn";
+    addBtn.textContent = "Add";
 
+    addBtn.onclick = async () => {
+      const reqRef = ref(db, `friend_requests/${uid}/${currentUID}`);
+      if ((await get(reqRef)).exists()) {
+        alert("Request already sent");
+        return;
+      }
+
+      await set(reqRef, { time: Date.now() });
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    };
+
+    div.innerHTML = `<span>@${username}</span>`;
+    div.appendChild(addBtn);
     searchResults.appendChild(div);
   });
 
   if (!found) {
-    searchResults.innerHTML = `
-      <p class="empty-text">No matching users found</p>
-    `;
+    searchResults.innerHTML = `<p class="empty-text">No matching users found</p>`;
   }
 });
