@@ -8,7 +8,16 @@
 </head>
 <body>
 
-  <div id="chat-container">
+  <!-- Username Modal -->
+  <div id="username-modal">
+    <div class="modal-box">
+      <h3>Enter your username</h3>
+      <input type="text" id="username-input" placeholder="Your name..." />
+      <button id="save-username">Join Chat</button>
+    </div>
+  </div>
+
+  <div id="chat-container" class="hidden">
     <h2>Live Chat Room</h2>
 
     <div id="messages"></div>
