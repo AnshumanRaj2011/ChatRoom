@@ -61,10 +61,10 @@ const logoutBtn = document.getElementById("btn-logout");
    STATE
    =============================== */
 let currentUID = null;
-let currentUsername = null;
+let initialized = false; // 🔥 KEY FIX
 
 /* ===============================
-   INITIAL STATE
+   INITIAL UI
    =============================== */
 showScreen("login");
 
@@ -75,65 +75,61 @@ googleLoginBtn.onclick = () => {
   signInWithRedirect(auth, provider);
 };
 
-/* Required for redirect flow */
-getRedirectResult(auth).catch(() => {});
+/* ===============================
+   WAIT FOR REDIRECT RESULT FIRST
+   =============================== */
+(async () => {
+  try {
+    await getRedirectResult(auth);
+  } catch (e) {
+    // ignore
+  } finally {
+    initialized = true;
+  }
+})();
 
 /* ===============================
    AUTH STATE HANDLER
    =============================== */
 onAuthStateChanged(auth, async (user) => {
+  if (!initialized) return; // 🔥 DO NOTHING until redirect resolved
+
   if (!user) {
     showScreen("login");
     return;
   }
 
-  // Logged in
   currentUID = user.uid;
 
-  const userRef = ref(db, "users/" + currentUID);
-  const snap = await get(userRef);
+  const userSnap = await get(ref(db, "users/" + currentUID));
 
-  if (snap.exists()) {
-    // Existing user
-    currentUsername = snap.val().username;
+  if (userSnap.exists()) {
     showScreen("home");
   } else {
-    // New user
     showScreen("username");
   }
 });
 
 /* ===============================
-   SAVE USERNAME (NEW USER)
+   SAVE USERNAME
    =============================== */
 saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
 
-  // validation
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
-    alert(
-      "Username must be at least 3 characters\n" +
-      "Only letters, numbers, underscore (_)\n" +
-      "No spaces allowed"
-    );
+    alert("Invalid username");
     return;
   }
 
-  const usernameLockRef = ref(db, "usernames/" + username);
-  const lockSnap = await get(usernameLockRef);
-
-  if (lockSnap.exists()) {
+  const lockRef = ref(db, "usernames/" + username);
+  if ((await get(lockRef)).exists()) {
     alert("Username already taken");
     return;
   }
 
-  // Save username
-  await set(usernameLockRef, currentUID);
-  await set(ref(db, "users/" + currentUID), {
-    username: username
-  });
+  await set(lockRef, currentUID);
+  await set(ref(db, "users/" + currentUID), { username });
 
-  currentUsername = username;
   showScreen("home");
 };
 
