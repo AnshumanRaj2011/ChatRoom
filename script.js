@@ -1,23 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
-  getDatabase,
-  ref,
-  push,
-  onChildAdded,
-  onChildRemoved,
-  remove,
-  update,
-  get,
-  set
+  getDatabase, ref, push, onChildAdded,
+  onChildRemoved, remove, update, get, set
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
 import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
-  onAuthStateChanged,
-  signOut
+  getAuth, GoogleAuthProvider,
+  signInWithRedirect, getRedirectResult,
+  onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 /* Firebase */
@@ -35,7 +24,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-
 const messagesRef = ref(db, "messages");
 
 /* DOM */
@@ -54,16 +42,17 @@ const input = document.getElementById("message-input");
 const editBtn = document.getElementById("edit-btn");
 const deleteBtn = document.getElementById("delete-btn");
 
+/* State */
 let currentUID = null;
 let username = null;
 const selectedKeys = new Set();
 
-/* helpers */
+/* Helpers */
 const show = el => el.classList.remove("hidden");
 const hide = el => el.classList.add("hidden");
 
-/* start clean */
-hide(loginModal);
+/* INITIAL UI */
+show(loginModal);
 hide(usernameModal);
 hide(chatContainer);
 
@@ -72,31 +61,34 @@ googleLoginBtn.onclick = () => {
   signInWithRedirect(auth, provider);
 };
 
+/* Redirect handler */
 getRedirectResult(auth).catch(() => {});
 
-/* auth state */
+/* AUTH STATE – STRICT FLOW */
 onAuthStateChanged(auth, async (user) => {
-  hide(loginModal);
-  hide(usernameModal);
-  hide(chatContainer);
-
   if (!user) {
     show(loginModal);
+    hide(usernameModal);
+    hide(chatContainer);
     return;
   }
 
+  // user logged in
   currentUID = user.uid;
-  const snap = await get(ref(db, "users/" + currentUID + "/username"));
+  hide(loginModal);
+
+  const snap = await get(ref(db, "users/" + currentUID));
 
   if (snap.exists()) {
-    username = snap.val();
+    username = snap.val().username;
+    hide(usernameModal);
     show(chatContainer);
   } else {
     show(usernameModal);
   }
 });
 
-/* save username */
+/* SAVE USERNAME (NEW USERS ONLY) */
 saveUsernameBtn.onclick = async () => {
   const u = usernameInput.value.trim().toLowerCase();
 
@@ -119,13 +111,13 @@ saveUsernameBtn.onclick = async () => {
   show(chatContainer);
 };
 
-/* logout */
+/* LOGOUT */
 logoutBtn.onclick = async () => {
   await signOut(auth);
   location.reload();
 };
 
-/* messages */
+/* LOAD MESSAGES */
 onChildAdded(messagesRef, snap => {
   const msg = snap.val();
   const key = snap.key;
@@ -150,12 +142,7 @@ onChildAdded(messagesRef, snap => {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-onChildRemoved(messagesRef, snap => {
-  const el = document.querySelector(`[data-key="${snap.key}"]`);
-  if (el) el.remove();
-});
-
-/* send */
+/* SEND */
 form.addEventListener("submit", e => {
   e.preventDefault();
   if (!input.value.trim()) return;
@@ -170,12 +157,12 @@ form.addEventListener("submit", e => {
   input.value = "";
 });
 
-/* edit */
+/* EDIT */
 editBtn.onclick = () => {
   if (selectedKeys.size !== 1) return;
   const key = [...selectedKeys][0];
-  const msg = document.querySelector(`[data-key="${key}"]`);
-  const oldText = msg.children[1].textContent.replace(" (edited)", "");
+  const el = document.querySelector(`[data-key="${key}"]`);
+  const oldText = el.children[1].textContent.replace(" (edited)", "");
   const newText = prompt("Edit message", oldText);
   if (!newText) return;
 
@@ -183,7 +170,7 @@ editBtn.onclick = () => {
   selectedKeys.clear();
 };
 
-/* delete */
+/* DELETE */
 deleteBtn.onclick = () => {
   selectedKeys.forEach(key => remove(ref(db, "messages/" + key)));
   selectedKeys.clear();
