@@ -40,7 +40,8 @@ const provider = new GoogleAuthProvider();
 const screens = {
   login: document.getElementById("screen-login"),
   username: document.getElementById("screen-username"),
-  home: document.getElementById("screen-home")
+  home: document.getElementById("screen-home"),
+  search: document.getElementById("screen-search")
 };
 
 function showScreen(name) {
@@ -56,6 +57,11 @@ const saveUsernameBtn = document.getElementById("save-username-btn");
 const usernameInput = document.getElementById("username-input");
 const logoutBtn = document.getElementById("btn-logout");
 
+const btnSearch = document.getElementById("btn-search");
+const btnBackSearch = document.getElementById("btn-back-search");
+const searchInput = document.getElementById("search-input");
+const searchResults = document.getElementById("search-results");
+
 /* ===============================
    STATE
    =============================== */
@@ -67,7 +73,7 @@ let currentUID = null;
 showScreen("login");
 
 /* ===============================
-   GOOGLE LOGIN (POPUP – STABLE)
+   GOOGLE LOGIN (POPUP)
    =============================== */
 googleLoginBtn.onclick = async () => {
   try {
@@ -91,16 +97,14 @@ onAuthStateChanged(auth, async user => {
   const snap = await get(userRef);
 
   if (snap.exists()) {
-    // Existing user
     showScreen("home");
   } else {
-    // New user
     showScreen("username");
   }
 });
 
 /* ===============================
-   SAVE USERNAME (UNIQUE)
+   SAVE USERNAME (NEW USER)
    =============================== */
 saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
@@ -117,9 +121,7 @@ saveUsernameBtn.onclick = async () => {
   }
 
   await set(lockRef, currentUID);
-  await set(ref(db, "users/" + currentUID), {
-    username
-  });
+  await set(ref(db, "users/" + currentUID), { username });
 
   showScreen("home");
 };
@@ -131,3 +133,53 @@ logoutBtn.onclick = async () => {
   await signOut(auth);
   showScreen("login");
 };
+
+/* ===============================
+   NAVIGATION: HOME ↔ SEARCH
+   =============================== */
+btnSearch.onclick = () => {
+  searchInput.value = "";
+  searchResults.innerHTML = "";
+  showScreen("search");
+};
+
+btnBackSearch.onclick = () => {
+  showScreen("home");
+};
+
+/* ===============================
+   SEARCH USERS BY USERNAME
+   =============================== */
+searchInput.addEventListener("input", async () => {
+  const query = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+
+  if (query.length < 3) return;
+
+  const usernameRef = ref(db, "usernames/" + query);
+  const snap = await get(usernameRef);
+
+  if (!snap.exists()) {
+    searchResults.innerHTML = `<p class="empty-text">User not found</p>`;
+    return;
+  }
+
+  const uid = snap.val();
+
+  if (uid === currentUID) {
+    searchResults.innerHTML = `<p class="empty-text">That’s you 🙂</p>`;
+    return;
+  }
+
+  const userSnap = await get(ref(db, "users/" + uid));
+  const username = userSnap.val().username;
+
+  const div = document.createElement("div");
+  div.className = "list-item";
+  div.innerHTML = `
+    <span>@${username}</span>
+    <button class="primary-btn" disabled>Add</button>
+  `;
+
+  searchResults.appendChild(div);
+});
