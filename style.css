@@ -1,17 +1,43 @@
 body {
   font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 20px;
   background: #f0f0f0;
+  padding: 20px;
 }
 
+.hidden {
+  display: none;
+}
+
+/* Username Modal */
+#username-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.modal-box input {
+  padding: 10px;
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* Chat */
 #chat-container {
   max-width: 600px;
   margin: auto;
-  background: #ffffff;
+  background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 #messages {
@@ -19,14 +45,13 @@ body {
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 10px;
-  margin-bottom: 10px;
 }
 
 .message {
+  background: #e1f5fe;
   padding: 8px;
   margin-bottom: 8px;
-  background: #e1f5fe;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
@@ -34,15 +59,20 @@ body {
   background: #ffcccb;
 }
 
+.message-user {
+  font-weight: bold;
+  font-size: 13px;
+}
+
 .message-time {
   font-size: 11px;
   color: #555;
-  margin-top: 3px;
 }
 
 form {
   display: flex;
   gap: 5px;
+  margin-top: 10px;
 }
 
 input {
@@ -56,10 +86,6 @@ button {
   color: white;
   border: none;
   cursor: pointer;
-}
-
-button:hover {
-  opacity: 0.9;
 }
 
 .controls {
