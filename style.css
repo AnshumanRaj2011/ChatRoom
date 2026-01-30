@@ -1,11 +1,4 @@
 /* ===============================
-   FORCE LOGIN SCREEN VISIBLE
-   =============================== */
-#login-modal {
-  display: flex !important;
-}
-
-/* ===============================
    BASE
    =============================== */
 body {
@@ -14,137 +7,110 @@ body {
   background: #ffb6c1;
 }
 
-.hidden {
+.screen {
   display: none;
+  min-height: 100vh;
+}
+
+.screen.active {
+  display: block;
 }
 
 /* ===============================
-   MODALS
+   CENTER BOX (LOGIN / USERNAME)
    =============================== */
-#login-modal,
-#username-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 105, 180, 0.85);
+.center-box {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-/* ===============================
-   MODAL BOX
-   =============================== */
-.modal-box {
-  background: #ffe4e9;
-  padding: 25px;
-  border-radius: 12px;
-  width: 260px;
   text-align: center;
+  padding: 20px;
 }
 
-.modal-box input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 6px;
-  border: 1px solid #ff4d4d;
+.tagline {
+  color: #8b0000;
+  margin-bottom: 30px;
 }
 
 /* ===============================
    BUTTONS
    =============================== */
-button {
+.primary-btn {
   background: red;
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 6px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 16px;
   cursor: pointer;
-  font-weight: bold;
 }
 
-button:hover {
+.primary-btn:active {
   background: darkred;
 }
 
 /* ===============================
-   CHAT CONTAINER
+   INPUTS
    =============================== */
-#chat-container {
-  max-width: 600px;
-  margin: 20px auto;
-  background: #ffe4e9;
-  padding: 15px;
-  border-radius: 12px;
+input {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px;
+  margin: 15px 0;
+  border-radius: 6px;
+  border: 1px solid #ff4d4d;
+  font-size: 15px;
 }
 
 /* ===============================
    TOP BAR
    =============================== */
 .top-bar {
+  background: #ff69b4;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.top-actions button {
+  margin-left: 6px;
+  background: red;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* ===============================
+   LISTS
+   =============================== */
+.list {
+  padding: 10px;
+}
+
+.list-item {
+  background: #ffe4e9;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* ===============================
-   MESSAGES
-   =============================== */
-#messages {
-  height: 300px;
-  overflow-y: auto;
-  background: #fff0f5;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 8px;
-}
-
-.message {
-  background: #ffd6dd;
-  padding: 8px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-}
-
-.message.selected {
-  background: #ff9999;
-}
-
-.message-user {
-  font-weight: bold;
-  font-size: 13px;
-}
-
-.message-time {
-  font-size: 11px;
-  color: #555;
+.empty-text {
+  text-align: center;
+  color: #8b0000;
+  margin-top: 30px;
 }
 
 /* ===============================
-   FORM
-   =============================== */
-form {
-  display: flex;
-  gap: 5px;
-}
-
-form input {
-  flex: 1;
-  padding: 10px;
-}
-
-/* ===============================
-   CONTROLS
-   =============================== */
-.controls {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-/* ===============================
-   HINT TEXT
+   HINT
    =============================== */
 .hint {
-  font-size: 12px;
+  font-size: 13px;
   color: #b00020;
 }
