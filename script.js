@@ -14,12 +14,13 @@ import {
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-/* Firebase config */
+/* 🔥 Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -63,10 +64,15 @@ const selectedKeys = new Set();
 const show = el => el.classList.remove("hidden");
 const hide = el => el.classList.add("hidden");
 
-/* Google login */
-googleLoginBtn.onclick = async () => {
-  await signInWithPopup(auth, provider);
+/* Google Login (REDIRECT – required for GitHub Pages) */
+googleLoginBtn.onclick = () => {
+  signInWithRedirect(auth, provider);
 };
+
+/* Handle redirect result (important) */
+getRedirectResult(auth).catch((error) => {
+  console.error("Google login redirect error:", error);
+});
 
 /* Auth state */
 onAuthStateChanged(auth, async (user) => {
@@ -88,28 +94,32 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-/* Save username (UNIQUE + NO SPACES) */
+/* Save username (NO SPACES + UNIQUE) */
 saveUsernameBtn.onclick = async () => {
   let u = usernameInput.value.trim().toLowerCase();
 
-  // Validation: no spaces, only letters/numbers/_
+  // only letters, numbers, underscore
   if (!/^[a-z0-9_]{3,}$/.test(u)) {
-    alert("Username must be at least 3 characters.\nOnly letters, numbers, underscore (_).\nNo spaces.");
+    alert(
+      "Username must be at least 3 characters.\n" +
+      "Only letters, numbers, and underscore (_).\n" +
+      "No spaces allowed."
+    );
     return;
   }
 
-  const usernameLockRef = ref(db, "usernames/" + u);
-  const snap = await get(usernameLockRef);
+  const lockRef = ref(db, "usernames/" + u);
+  const snap = await get(lockRef);
 
   if (snap.exists()) {
     alert("Username already taken. Choose another.");
     return;
   }
 
-  // Reserve username globally
-  await set(usernameLockRef, currentUID);
+  // lock username globally
+  await set(lockRef, currentUID);
 
-  // Save user profile
+  // save user profile
   await set(ref(db, "users/" + currentUID), {
     username: u
   });
