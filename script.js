@@ -20,7 +20,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-/* 🔥 Firebase Config */
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -31,7 +31,6 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* Init */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
@@ -55,99 +54,88 @@ const input = document.getElementById("message-input");
 const editBtn = document.getElementById("edit-btn");
 const deleteBtn = document.getElementById("delete-btn");
 
-/* State */
 let currentUID = null;
 let username = null;
 const selectedKeys = new Set();
 
-/* Helpers */
+/* helpers */
 const show = el => el.classList.remove("hidden");
 const hide = el => el.classList.add("hidden");
 
-/* Google Login (REDIRECT – required for GitHub Pages) */
+/* start clean */
+hide(loginModal);
+hide(usernameModal);
+hide(chatContainer);
+
+/* Google login */
 googleLoginBtn.onclick = () => {
   signInWithRedirect(auth, provider);
 };
 
-/* Handle redirect result (important) */
-getRedirectResult(auth).catch((error) => {
-  console.error("Google login redirect error:", error);
-});
+getRedirectResult(auth).catch(() => {});
 
-/* Auth state */
+/* auth state */
 onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
+  hide(loginModal);
+  hide(usernameModal);
+  hide(chatContainer);
+
+  if (!user) {
+    show(loginModal);
+    return;
+  }
 
   currentUID = user.uid;
-
-  const usernameRef = ref(db, "users/" + currentUID + "/username");
-  const snap = await get(usernameRef);
+  const snap = await get(ref(db, "users/" + currentUID + "/username"));
 
   if (snap.exists()) {
     username = snap.val();
-    hide(loginModal);
-    hide(usernameModal);
     show(chatContainer);
   } else {
-    hide(loginModal);
     show(usernameModal);
   }
 });
 
-/* Save username (NO SPACES + UNIQUE) */
+/* save username */
 saveUsernameBtn.onclick = async () => {
-  let u = usernameInput.value.trim().toLowerCase();
+  const u = usernameInput.value.trim().toLowerCase();
 
-  // only letters, numbers, underscore
   if (!/^[a-z0-9_]{3,}$/.test(u)) {
-    alert(
-      "Username must be at least 3 characters.\n" +
-      "Only letters, numbers, and underscore (_).\n" +
-      "No spaces allowed."
-    );
+    alert("Invalid username");
     return;
   }
 
-  const lockRef = ref(db, "usernames/" + u);
-  const snap = await get(lockRef);
-
-  if (snap.exists()) {
-    alert("Username already taken. Choose another.");
+  const lock = ref(db, "usernames/" + u);
+  if ((await get(lock)).exists()) {
+    alert("Username already taken");
     return;
   }
 
-  // lock username globally
-  await set(lockRef, currentUID);
-
-  // save user profile
-  await set(ref(db, "users/" + currentUID), {
-    username: u
-  });
+  await set(lock, currentUID);
+  await set(ref(db, "users/" + currentUID), { username: u });
 
   username = u;
   hide(usernameModal);
   show(chatContainer);
 };
 
-/* Logout */
+/* logout */
 logoutBtn.onclick = async () => {
   await signOut(auth);
   location.reload();
 };
 
-/* Load messages */
-onChildAdded(messagesRef, (snapshot) => {
-  const msg = snapshot.val();
-  const key = snapshot.key;
+/* messages */
+onChildAdded(messagesRef, snap => {
+  const msg = snap.val();
+  const key = snap.key;
 
   const div = document.createElement("div");
   div.className = "message";
   div.dataset.key = key;
 
   div.innerHTML = `
-    <div class="message-user">
-      ${msg.username}${msg.uid === currentUID ? " (You)" : ""}
-    </div>
+    <div class="message-user">${msg.username}${msg.uid === currentUID ? " (You)" : ""}</div>
     <div>${msg.text}${msg.edited ? " (edited)" : ""}</div>
     <div class="message-time">${new Date(msg.time).toLocaleString()}</div>
   `;
@@ -162,52 +150,41 @@ onChildAdded(messagesRef, (snapshot) => {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* Remove message */
-onChildRemoved(messagesRef, (snapshot) => {
-  const el = document.querySelector(`[data-key="${snapshot.key}"]`);
+onChildRemoved(messagesRef, snap => {
+  const el = document.querySelector(`[data-key="${snap.key}"]`);
   if (el) el.remove();
-  selectedKeys.delete(snapshot.key);
 });
 
-/* Send message */
-form.addEventListener("submit", (e) => {
+/* send */
+form.addEventListener("submit", e => {
   e.preventDefault();
-  const text = input.value.trim();
-  if (!text) return;
+  if (!input.value.trim()) return;
 
   push(messagesRef, {
     uid: currentUID,
-    username: username,
-    text: text,
+    username,
+    text: input.value.trim(),
     time: Date.now()
   });
 
   input.value = "";
 });
 
-/* Edit message */
+/* edit */
 editBtn.onclick = () => {
   if (selectedKeys.size !== 1) return;
-
   const key = [...selectedKeys][0];
-  const msgDiv = document.querySelector(`[data-key="${key}"]`);
-  const oldText = msgDiv.children[1].textContent.replace(" (edited)", "");
+  const msg = document.querySelector(`[data-key="${key}"]`);
+  const oldText = msg.children[1].textContent.replace(" (edited)", "");
+  const newText = prompt("Edit message", oldText);
+  if (!newText) return;
 
-  const newText = prompt("Edit message:", oldText);
-  if (!newText || newText === oldText) return;
-
-  update(ref(db, "messages/" + key), {
-    text: newText,
-    edited: true
-  });
-
+  update(ref(db, "messages/" + key), { text: newText, edited: true });
   selectedKeys.clear();
 };
 
-/* Delete message */
+/* delete */
 deleteBtn.onclick = () => {
-  selectedKeys.forEach(key => {
-    remove(ref(db, "messages/" + key));
-  });
+  selectedKeys.forEach(key => remove(ref(db, "messages/" + key)));
   selectedKeys.clear();
 };
