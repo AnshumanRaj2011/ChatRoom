@@ -3,17 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Live Chat Room</title>
+  <title>Secure Live Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- Username Modal -->
+  <!-- Login Modal -->
   <div id="login-modal">
     <div class="modal-box">
-      <h3>Enter Username</h3>
-      <input type="text" id="username-input" placeholder="Username" />
-      <button id="login-btn">Join Chat</button>
+      <h3>Login</h3>
+      <button id="google-login-btn">Login with Google</button>
+    </div>
+  </div>
+
+  <!-- Username Modal -->
+  <div id="username-modal" class="hidden">
+    <div class="modal-box">
+      <h3>Choose a username</h3>
+      <input id="username-input" placeholder="username (no spaces)" />
+      <button id="save-username-btn">Continue</button>
+      <p class="hint">
+        Only letters, numbers, underscore (_).<br>
+        No spaces. Cannot be changed later.
+      </p>
     </div>
   </div>
 
