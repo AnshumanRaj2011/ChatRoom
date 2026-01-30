@@ -8,44 +8,96 @@
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="login-modal">
-  <div class="modal-box">
-    <h2>Welcome</h2>
-    <button id="google-login-btn">Login with Google</button>
+<!-- ===============================
+     1. LANDING / LOGIN SCREEN
+     =============================== -->
+<div id="screen-login" class="screen active">
+  <div class="center-box">
+    <h1>ChatRoom</h1>
+    <p class="tagline">Connect with friends privately</p>
+
+    <button id="google-login-btn" class="primary-btn">
+      Login with Google
+    </button>
   </div>
 </div>
 
-<!-- USERNAME SCREEN -->
-<div id="username-modal" class="hidden">
-  <div class="modal-box">
-    <h2>Create Username</h2>
-    <input id="username-input" placeholder="username (no spaces)">
-    <button id="save-username-btn">Continue</button>
-    <p class="hint">Only letters, numbers, underscore (_)</p>
+<!-- ===============================
+     2. USERNAME SETUP (NEW USER)
+     =============================== -->
+<div id="screen-username" class="screen">
+  <div class="center-box">
+    <h2>Create your username</h2>
+
+    <input
+      type="text"
+      id="username-input"
+      placeholder="username (no spaces)"
+    >
+
+    <button id="save-username-btn" class="primary-btn">
+      Continue
+    </button>
+
+    <p class="hint">
+      Only letters, numbers, underscore (_).<br>
+      Cannot be changed later.
+    </p>
   </div>
 </div>
 
-<!-- CHAT -->
-<div id="chat-container" class="hidden">
+<!-- ===============================
+     3. HOME / FRIEND LIST
+     =============================== -->
+<div id="screen-home" class="screen">
   <div class="top-bar">
-    <h2>Live Chat</h2>
-    <button id="logout-btn">Logout</button>
+    <h2>Friends</h2>
+    <div class="top-actions">
+      <button id="btn-search">＋</button>
+      <button id="btn-requests">🔔</button>
+      <button id="btn-logout">Logout</button>
+    </div>
   </div>
 
-  <div id="messages"></div>
-
-  <form id="message-form">
-    <input id="message-input" placeholder="Type message..." required>
-    <button type="submit">Send</button>
-  </form>
-
-  <div class="controls">
-    <button id="edit-btn">Edit</button>
-    <button id="delete-btn">Delete</button>
+  <div id="friends-list" class="list">
+    <p class="empty-text">No friends yet</p>
   </div>
 </div>
 
-<script type="module" src="script.js?v=FINAL"></script>
+<!-- ===============================
+     4. SEARCH USERS
+     =============================== -->
+<div id="screen-search" class="screen">
+  <div class="top-bar">
+    <h2>Search User</h2>
+    <button id="btn-back-search">←</button>
+  </div>
+
+  <input
+    type="text"
+    id="search-input"
+    placeholder="Search by username"
+  >
+
+  <div id="search-results" class="list">
+    <!-- user cards appear here -->
+  </div>
+</div>
+
+<!-- ===============================
+     5. FRIEND REQUESTS
+     =============================== -->
+<div id="screen-requests" class="screen">
+  <div class="top-bar">
+    <h2>Friend Requests</h2>
+    <button id="btn-back-requests">←</button>
+  </div>
+
+  <div id="request-list" class="list">
+    <p class="empty-text">No requests</p>
+  </div>
+</div>
+
+<script type="module" src="script.js"></script>
 </body>
 </html>
