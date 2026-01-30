@@ -8,8 +8,8 @@ body {
   display: none;
 }
 
-/* Username Modal */
-#username-modal {
+/* Login modal */
+#login-modal {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.6);
@@ -23,12 +23,13 @@ body {
   padding: 20px;
   border-radius: 10px;
   text-align: center;
+  width: 250px;
 }
 
 .modal-box input {
-  padding: 10px;
   width: 100%;
-  margin: 10px 0;
+  padding: 10px;
+  margin: 8px 0;
 }
 
 /* Chat */
