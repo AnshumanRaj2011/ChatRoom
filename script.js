@@ -43,17 +43,28 @@ const clearBtn = document.getElementById("clear-btn");
 let username = localStorage.getItem("chat_user");
 let password = localStorage.getItem("chat_pass");
 
-if (username && password) {
+function showLogin() {
+  loginModal.style.display = "flex";
+  chatContainer.classList.add("hidden");
+}
+
+function showChat() {
   loginModal.style.display = "none";
   chatContainer.classList.remove("hidden");
+}
+
+if (username && password && username.length > 0 && password.length > 0) {
+  showChat();
+} else {
+  showLogin();
 }
 
 loginBtn.onclick = () => {
   const u = usernameInput.value.trim();
   const p = passwordInput.value.trim();
 
-  if (!u || !p) {
-    alert("Enter username and password");
+  if (u.length < 3 || p.length < 3) {
+    alert("Username and password must be at least 3 characters");
     return;
   }
 
@@ -63,8 +74,7 @@ loginBtn.onclick = () => {
   username = u;
   password = p;
 
-  loginModal.style.display = "none";
-  chatContainer.classList.remove("hidden");
+  showChat();
 };
 
 /* Multi select */
@@ -137,17 +147,17 @@ editBtn.onclick = () => {
   const oldText = msgDiv.children[1].textContent.replace(" (edited)", "");
 
   const newText = prompt("Edit message:", oldText);
-  if (!newText || newText === oldText) return;
+  if (!newText || newText.trim() === oldText) return;
 
   update(ref(db, "messages/" + key), {
-    text: newText,
+    text: newText.trim(),
     edited: true
   });
 
   selectedKeys.clear();
 };
 
-/* Delete */
+/* Delete selected messages */
 deleteBtn.onclick = () => {
   if (selectedKeys.size === 0) {
     alert("Select messages to delete");
@@ -161,7 +171,7 @@ deleteBtn.onclick = () => {
   selectedKeys.clear();
 };
 
-/* Clear all */
+/* Clear all messages */
 clearBtn.onclick = () => {
   if (confirm("Delete ALL messages?")) {
     remove(messagesRef);
