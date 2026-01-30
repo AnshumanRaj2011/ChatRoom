@@ -3,7 +3,9 @@ import {
   getDatabase,
   ref,
   get,
-  set
+  set,
+  onValue,
+  remove
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 import {
   getAuth,
@@ -67,13 +69,15 @@ const btnBackRequests = document.getElementById("btn-back-requests");
 const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
 
+const requestList = document.getElementById("request-list");
+
 /* ===============================
    STATE
    =============================== */
 let currentUID = null;
 
 /* ===============================
-   INITIAL UI
+   INITIAL SCREEN
    =============================== */
 showScreen("login");
 
@@ -83,8 +87,8 @@ showScreen("login");
 googleLoginBtn.onclick = async () => {
   try {
     await signInWithPopup(auth, provider);
-  } catch (err) {
-    alert(err.message);
+  } catch (e) {
+    alert(e.message);
   }
 };
 
@@ -98,9 +102,8 @@ onAuthStateChanged(auth, async user => {
   }
 
   currentUID = user.uid;
-  const userRef = ref(db, "users/" + currentUID);
-  const snap = await get(userRef);
 
+  const snap = await get(ref(db, "users/" + currentUID));
   if (snap.exists()) {
     showScreen("home");
   } else {
@@ -115,7 +118,7 @@ saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
 
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
-    alert("Username must be at least 3 characters and contain no spaces");
+    alert("Username must be at least 3 characters (letters, numbers, _)");
     return;
   }
 
@@ -150,7 +153,11 @@ btnSearch.onclick = () => {
 
 btnBackSearch.onclick = () => showScreen("home");
 
-btnRequests.onclick = () => showScreen("requests");
+btnRequests.onclick = () => {
+  showScreen("requests");
+  loadRequests();
+};
+
 btnBackRequests.onclick = () => showScreen("home");
 
 /* ===============================
@@ -175,13 +182,11 @@ searchInput.addEventListener("input", async () => {
     const uid = child.val();
 
     if (!username.includes(query)) return;
-
     found = true;
 
     const div = document.createElement("div");
     div.className = "list-item";
 
-    // Self
     if (uid === currentUID) {
       div.innerHTML = `<span>@${username}</span><span>That’s you 🙂</span>`;
       searchResults.appendChild(div);
@@ -210,6 +215,58 @@ searchInput.addEventListener("input", async () => {
   });
 
   if (!found) {
-    searchResults.innerHTML = `<p class="empty-text">No matching users found</p>`;
+    searchResults.innerHTML = `<p class="empty-text">No matching users</p>`;
   }
 });
+
+/* ===============================
+   LOAD FRIEND REQUESTS
+   =============================== */
+function loadRequests() {
+  requestList.innerHTML = "";
+
+  const reqRef = ref(db, "friend_requests/" + currentUID);
+
+  onValue(reqRef, async snap => {
+    requestList.innerHTML = "";
+
+    if (!snap.exists()) {
+      requestList.innerHTML = `<p class="empty-text">No requests</p>`;
+      return;
+    }
+
+    snap.forEach(async child => {
+      const fromUID = child.key;
+      const userSnap = await get(ref(db, "users/" + fromUID));
+      if (!userSnap.exists()) return;
+
+      const username = userSnap.val().username;
+
+      const div = document.createElement("div");
+      div.className = "list-item";
+
+      const acceptBtn = document.createElement("button");
+      acceptBtn.className = "primary-btn";
+      acceptBtn.textContent = "Accept";
+
+      const rejectBtn = document.createElement("button");
+      rejectBtn.className = "primary-btn";
+      rejectBtn.textContent = "Reject";
+
+      acceptBtn.onclick = async () => {
+        await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+        await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+      };
+
+      rejectBtn.onclick = async () => {
+        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+      };
+
+      div.innerHTML = `<span>@${username}</span>`;
+      div.appendChild(acceptBtn);
+      div.appendChild(rejectBtn);
+      requestList.appendChild(div);
+    });
+  });
+}
