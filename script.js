@@ -6,16 +6,20 @@ import {
   onChildAdded,
   onChildRemoved,
   remove,
-  update
+  update,
+  get,
+  set
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 import {
   getAuth,
-  signInAnonymously,
-  onAuthStateChanged
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-/* Firebase Config */
+/* Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -26,17 +30,22 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* Init Firebase */
+/* Init */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
 const messagesRef = ref(db, "messages");
 
 /* DOM */
 const loginModal = document.getElementById("login-modal");
+const usernameModal = document.getElementById("username-modal");
 const chatContainer = document.getElementById("chat-container");
+
+const googleLoginBtn = document.getElementById("google-login-btn");
+const saveUsernameBtn = document.getElementById("save-username-btn");
 const usernameInput = document.getElementById("username-input");
-const loginBtn = document.getElementById("login-btn");
 const logoutBtn = document.getElementById("logout-btn");
 
 const messagesDiv = document.getElementById("messages");
@@ -46,45 +55,73 @@ const editBtn = document.getElementById("edit-btn");
 const deleteBtn = document.getElementById("delete-btn");
 
 /* State */
-let username = localStorage.getItem("chat_username");
 let currentUID = null;
+let username = null;
 const selectedKeys = new Set();
 
-/* UI helpers */
-function showLogin() {
-  loginModal.style.display = "flex";
-  chatContainer.classList.add("hidden");
-}
-function showChat() {
-  loginModal.style.display = "none";
-  chatContainer.classList.remove("hidden");
-}
+/* Helpers */
+const show = el => el.classList.remove("hidden");
+const hide = el => el.classList.add("hidden");
 
-/* Anonymous Auth */
-signInAnonymously(auth);
+/* Google login */
+googleLoginBtn.onclick = async () => {
+  await signInWithPopup(auth, provider);
+};
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUID = user.uid;
-    username ? showChat() : showLogin();
+/* Auth state */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+
+  currentUID = user.uid;
+
+  const usernameRef = ref(db, "users/" + currentUID + "/username");
+  const snap = await get(usernameRef);
+
+  if (snap.exists()) {
+    username = snap.val();
+    hide(loginModal);
+    hide(usernameModal);
+    show(chatContainer);
+  } else {
+    hide(loginModal);
+    show(usernameModal);
   }
 });
 
-/* Username */
-loginBtn.onclick = () => {
-  const u = usernameInput.value.trim();
-  if (u.length < 3) {
-    alert("Username must be at least 3 characters");
+/* Save username (UNIQUE + NO SPACES) */
+saveUsernameBtn.onclick = async () => {
+  let u = usernameInput.value.trim().toLowerCase();
+
+  // Validation: no spaces, only letters/numbers/_
+  if (!/^[a-z0-9_]{3,}$/.test(u)) {
+    alert("Username must be at least 3 characters.\nOnly letters, numbers, underscore (_).\nNo spaces.");
     return;
   }
-  localStorage.setItem("chat_username", u);
+
+  const usernameLockRef = ref(db, "usernames/" + u);
+  const snap = await get(usernameLockRef);
+
+  if (snap.exists()) {
+    alert("Username already taken. Choose another.");
+    return;
+  }
+
+  // Reserve username globally
+  await set(usernameLockRef, currentUID);
+
+  // Save user profile
+  await set(ref(db, "users/" + currentUID), {
+    username: u
+  });
+
   username = u;
-  showChat();
+  hide(usernameModal);
+  show(chatContainer);
 };
 
 /* Logout */
-logoutBtn.onclick = () => {
-  localStorage.removeItem("chat_username");
+logoutBtn.onclick = async () => {
+  await signOut(auth);
   location.reload();
 };
 
@@ -105,7 +142,6 @@ onChildAdded(messagesRef, (snapshot) => {
     <div class="message-time">${new Date(msg.time).toLocaleString()}</div>
   `;
 
-  /* Owner-only select */
   div.onclick = () => {
     if (msg.uid !== currentUID) return;
     div.classList.toggle("selected");
@@ -141,20 +177,17 @@ form.addEventListener("submit", (e) => {
 
 /* Edit message */
 editBtn.onclick = () => {
-  if (selectedKeys.size !== 1) {
-    alert("Select one of your messages");
-    return;
-  }
+  if (selectedKeys.size !== 1) return;
 
   const key = [...selectedKeys][0];
   const msgDiv = document.querySelector(`[data-key="${key}"]`);
   const oldText = msgDiv.children[1].textContent.replace(" (edited)", "");
-  const newText = prompt("Edit message:", oldText);
 
-  if (!newText || newText.trim() === oldText) return;
+  const newText = prompt("Edit message:", oldText);
+  if (!newText || newText === oldText) return;
 
   update(ref(db, "messages/" + key), {
-    text: newText.trim(),
+    text: newText,
     edited: true
   });
 
