@@ -154,36 +154,46 @@ searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
-  if (query.length < 3) return;
+  if (query.length < 2) return;
 
-  const usernameRef = ref(db, "usernames/" + query);
-  const snap = await get(usernameRef);
+  const snap = await get(ref(db, "usernames"));
 
   if (!snap.exists()) {
-  searchResults.innerHTML = `
-    <p class="empty-text">
-      User not found<br>
-      (They may not have created a username yet)
-    </p>`;
-  return;
-  }
-
-  const uid = snap.val();
-
-  if (uid === currentUID) {
-    searchResults.innerHTML = `<p class="empty-text">That’s you 🙂</p>`;
+    searchResults.innerHTML = `<p class="empty-text">No users found</p>`;
     return;
   }
 
-  const userSnap = await get(ref(db, "users/" + uid));
-  const username = userSnap.val().username;
+  let found = false;
 
-  const div = document.createElement("div");
-  div.className = "list-item";
-  div.innerHTML = `
-    <span>@${username}</span>
-    <button class="primary-btn" disabled>Add</button>
-  `;
+  snap.forEach(child => {
+    const username = child.key;
+    const uid = child.val();
 
-  searchResults.appendChild(div);
+    if (!username.includes(query)) return;
+
+    found = true;
+
+    if (uid === currentUID) {
+      const selfDiv = document.createElement("div");
+      selfDiv.className = "list-item";
+      selfDiv.innerHTML = `<span>@${username}</span><span>That’s you 🙂</span>`;
+      searchResults.appendChild(selfDiv);
+      return;
+    }
+
+    const div = document.createElement("div");
+    div.className = "list-item";
+    div.innerHTML = `
+      <span>@${username}</span>
+      <button class="primary-btn" disabled>Add</button>
+    `;
+
+    searchResults.appendChild(div);
+  });
+
+  if (!found) {
+    searchResults.innerHTML = `
+      <p class="empty-text">No matching users found</p>
+    `;
+  }
 });
