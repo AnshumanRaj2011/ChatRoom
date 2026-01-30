@@ -11,7 +11,9 @@ import {
   signInWithRedirect,
   getRedirectResult,
   onAuthStateChanged,
-  signOut
+  signOut,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 /* ===============================
@@ -28,7 +30,7 @@ const firebaseConfig = {
 };
 
 /* ===============================
-   INIT
+   INIT APP
    =============================== */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -41,7 +43,7 @@ const provider = new GoogleAuthProvider();
 const screens = {
   login: document.getElementById("screen-login"),
   username: document.getElementById("screen-username"),
-  home: document.getElementById("screen-home"),
+  home: document.getElementById("screen-home")
 };
 
 function showScreen(name) {
@@ -61,7 +63,6 @@ const logoutBtn = document.getElementById("btn-logout");
    STATE
    =============================== */
 let currentUID = null;
-let initialized = false; // 🔥 KEY FIX
 
 /* ===============================
    INITIAL UI
@@ -69,46 +70,36 @@ let initialized = false; // 🔥 KEY FIX
 showScreen("login");
 
 /* ===============================
-   GOOGLE LOGIN
+   LOGIN BUTTON
    =============================== */
 googleLoginBtn.onclick = () => {
   signInWithRedirect(auth, provider);
 };
 
 /* ===============================
-   WAIT FOR REDIRECT RESULT FIRST
+   AUTH BOOTSTRAP (CRITICAL FIX)
    =============================== */
-(async () => {
-  try {
-    await getRedirectResult(auth);
-  } catch (e) {
-    // ignore
-  } finally {
-    initialized = true;
-  }
-})();
+setPersistence(auth, browserLocalPersistence)
+  .then(() => getRedirectResult(auth))
+  .catch(() => {})
+  .finally(() => {
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        showScreen("login");
+        return;
+      }
 
-/* ===============================
-   AUTH STATE HANDLER
-   =============================== */
-onAuthStateChanged(auth, async (user) => {
-  if (!initialized) return; // 🔥 DO NOTHING until redirect resolved
+      currentUID = user.uid;
 
-  if (!user) {
-    showScreen("login");
-    return;
-  }
+      const snap = await get(ref(db, "users/" + currentUID));
 
-  currentUID = user.uid;
-
-  const userSnap = await get(ref(db, "users/" + currentUID));
-
-  if (userSnap.exists()) {
-    showScreen("home");
-  } else {
-    showScreen("username");
-  }
-});
+      if (snap.exists()) {
+        showScreen("home");
+      } else {
+        showScreen("username");
+      }
+    });
+  });
 
 /* ===============================
    SAVE USERNAME
@@ -117,7 +108,7 @@ saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
 
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
-    alert("Invalid username");
+    alert("Username must be at least 3 characters and contain no spaces");
     return;
   }
 
