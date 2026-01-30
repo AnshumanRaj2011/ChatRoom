@@ -1,42 +1,62 @@
 body {
+  margin: 0;
   font-family: Arial, sans-serif;
-  background: #f0f0f0;
-  padding: 20px;
+  background: #ffb6c1; /* pink background */
 }
 
-.hidden { display: none; }
+.hidden {
+  display: none;
+}
 
-/* Login modal */
-#login-modal {
+/* Modals */
+#login-modal,
+#username-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(255, 105, 180, 0.85);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 }
 
 .modal-box {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 250px;
+  background: #ffe4e9;
+  padding: 25px;
+  border-radius: 12px;
+  width: 260px;
   text-align: center;
 }
 
 .modal-box input {
   width: 100%;
   padding: 10px;
-  margin: 8px 0;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #ff4d4d;
+}
+
+/* Buttons */
+button {
+  background: #ff0000;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #cc0000;
 }
 
 /* Chat */
 #chat-container {
   max-width: 600px;
-  margin: auto;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
+  margin: 20px auto;
+  background: #ffe4e9;
+  padding: 15px;
+  border-radius: 12px;
 }
 
 .top-bar {
@@ -45,31 +65,24 @@ body {
   align-items: center;
 }
 
-.logout-btn {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
 #messages {
   height: 300px;
   overflow-y: auto;
-  border: 1px solid #ccc;
+  background: #fff0f5;
   padding: 10px;
   margin: 10px 0;
+  border-radius: 8px;
 }
 
 .message {
-  background: #e1f5fe;
+  background: #ffd6dd;
   padding: 8px;
   margin-bottom: 8px;
   border-radius: 6px;
 }
 
 .message.selected {
-  background: #ffcccb;
+  background: #ff9999;
 }
 
 .message-user {
@@ -87,21 +100,18 @@ form {
   gap: 5px;
 }
 
-input {
+form input {
   flex: 1;
   padding: 10px;
-}
-
-button {
-  padding: 10px;
-  background: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
 }
 
 .controls {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #b00020;
 }
