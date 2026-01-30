@@ -31,6 +31,7 @@ const chatContainer = document.getElementById("chat-container");
 const usernameInput = document.getElementById("username-input");
 const passwordInput = document.getElementById("password-input");
 const loginBtn = document.getElementById("login-btn");
+const logoutBtn = document.getElementById("logout-btn");
 
 const messagesDiv = document.getElementById("messages");
 const form = document.getElementById("message-form");
@@ -70,14 +71,19 @@ loginBtn.onclick = () => {
 
   localStorage.setItem("chat_user", u);
   localStorage.setItem("chat_pass", p);
-
   username = u;
   password = p;
-
   showChat();
 };
 
-/* Multi select */
+/* Logout */
+logoutBtn.onclick = () => {
+  localStorage.removeItem("chat_user");
+  localStorage.removeItem("chat_pass");
+  location.reload();
+};
+
+/* Multi-select */
 const selectedKeys = new Set();
 
 /* Load messages */
@@ -91,7 +97,7 @@ onChildAdded(messagesRef, (snapshot) => {
 
   const userDiv = document.createElement("div");
   userDiv.className = "message-user";
-  userDiv.textContent = msg.user;
+  userDiv.textContent = msg.user + (msg.user === username ? " (You)" : "");
 
   const textDiv = document.createElement("div");
   textDiv.textContent = msg.text + (msg.edited ? " (edited)" : "");
@@ -104,7 +110,9 @@ onChildAdded(messagesRef, (snapshot) => {
   div.appendChild(textDiv);
   div.appendChild(timeDiv);
 
+  /* Only owner can select */
   div.onclick = () => {
+    if (msg.user !== username) return;
     div.classList.toggle("selected");
     selectedKeys.has(key) ? selectedKeys.delete(key) : selectedKeys.add(key);
   };
@@ -113,7 +121,7 @@ onChildAdded(messagesRef, (snapshot) => {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* Remove UI message */
+/* Remove message from UI */
 onChildRemoved(messagesRef, (snapshot) => {
   const el = document.querySelector(`[data-key="${snapshot.key}"]`);
   if (el) el.remove();
@@ -135,10 +143,10 @@ form.addEventListener("submit", (e) => {
   input.value = "";
 });
 
-/* Edit message */
+/* Edit message (owner only) */
 editBtn.onclick = () => {
   if (selectedKeys.size !== 1) {
-    alert("Select ONE message to edit");
+    alert("Select ONE of your messages");
     return;
   }
 
@@ -157,10 +165,10 @@ editBtn.onclick = () => {
   selectedKeys.clear();
 };
 
-/* Delete selected messages */
+/* Delete selected (owner only) */
 deleteBtn.onclick = () => {
   if (selectedKeys.size === 0) {
-    alert("Select messages to delete");
+    alert("Select your own messages to delete");
     return;
   }
 
