@@ -9,7 +9,7 @@ import {
   update
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-/* 🔥 Firebase Config */
+/* Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -26,42 +26,48 @@ const db = getDatabase(app);
 const messagesRef = ref(db, "messages");
 
 /* DOM */
+const loginModal = document.getElementById("login-modal");
+const chatContainer = document.getElementById("chat-container");
+const usernameInput = document.getElementById("username-input");
+const passwordInput = document.getElementById("password-input");
+const loginBtn = document.getElementById("login-btn");
+
 const messagesDiv = document.getElementById("messages");
 const form = document.getElementById("message-form");
 const input = document.getElementById("message-input");
+const editBtn = document.getElementById("edit-btn");
 const deleteBtn = document.getElementById("delete-btn");
 const clearBtn = document.getElementById("clear-btn");
-const editBtn = document.getElementById("edit-btn");
 
-/* Username elements */
-const modal = document.getElementById("username-modal");
-const chatContainer = document.getElementById("chat-container");
-const usernameInput = document.getElementById("username-input");
-const saveUsernameBtn = document.getElementById("save-username");
+/* Login logic */
+let username = localStorage.getItem("chat_user");
+let password = localStorage.getItem("chat_pass");
 
-/* Username logic */
-let username = localStorage.getItem("chat_username");
-
-if (!username) {
-  modal.style.display = "flex";
-} else {
-  modal.style.display = "none";
+if (username && password) {
+  loginModal.style.display = "none";
   chatContainer.classList.remove("hidden");
 }
 
-saveUsernameBtn.onclick = () => {
-  const name = usernameInput.value.trim();
-  if (!name) {
-    alert("Please enter a username");
+loginBtn.onclick = () => {
+  const u = usernameInput.value.trim();
+  const p = passwordInput.value.trim();
+
+  if (!u || !p) {
+    alert("Enter username and password");
     return;
   }
-  localStorage.setItem("chat_username", name);
-  username = name;
-  modal.style.display = "none";
+
+  localStorage.setItem("chat_user", u);
+  localStorage.setItem("chat_pass", p);
+
+  username = u;
+  password = p;
+
+  loginModal.style.display = "none";
   chatContainer.classList.remove("hidden");
 };
 
-/* Multi-select */
+/* Multi select */
 const selectedKeys = new Set();
 
 /* Load messages */
@@ -89,20 +95,15 @@ onChildAdded(messagesRef, (snapshot) => {
   div.appendChild(timeDiv);
 
   div.onclick = () => {
-    if (selectedKeys.has(key)) {
-      selectedKeys.delete(key);
-      div.classList.remove("selected");
-    } else {
-      selectedKeys.add(key);
-      div.classList.add("selected");
-    }
+    div.classList.toggle("selected");
+    selectedKeys.has(key) ? selectedKeys.delete(key) : selectedKeys.add(key);
   };
 
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
 
-/* Remove message */
+/* Remove UI message */
 onChildRemoved(messagesRef, (snapshot) => {
   const el = document.querySelector(`[data-key="${snapshot.key}"]`);
   if (el) el.remove();
@@ -136,17 +137,17 @@ editBtn.onclick = () => {
   const oldText = msgDiv.children[1].textContent.replace(" (edited)", "");
 
   const newText = prompt("Edit message:", oldText);
-  if (!newText || newText.trim() === oldText) return;
+  if (!newText || newText === oldText) return;
 
   update(ref(db, "messages/" + key), {
-    text: newText.trim(),
+    text: newText,
     edited: true
   });
 
   selectedKeys.clear();
 };
 
-/* Delete selected */
+/* Delete */
 deleteBtn.onclick = () => {
   if (selectedKeys.size === 0) {
     alert("Select messages to delete");
