@@ -8,12 +8,9 @@ import {
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   onAuthStateChanged,
-  signOut,
-  setPersistence,
-  browserLocalPersistence
+  signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 /* ===============================
@@ -70,39 +67,40 @@ let currentUID = null;
 showScreen("login");
 
 /* ===============================
-   LOGIN BUTTON
+   GOOGLE LOGIN (POPUP – STABLE)
    =============================== */
-googleLoginBtn.onclick = () => {
-  signInWithRedirect(auth, provider);
+googleLoginBtn.onclick = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    alert(err.message);
+  }
 };
 
 /* ===============================
-   AUTH BOOTSTRAP (CRITICAL FIX)
+   AUTH STATE
    =============================== */
-setPersistence(auth, browserLocalPersistence)
-  .then(() => getRedirectResult(auth))
-  .catch(() => {})
-  .finally(() => {
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        showScreen("login");
-        return;
-      }
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    showScreen("login");
+    return;
+  }
 
-      currentUID = user.uid;
+  currentUID = user.uid;
+  const userRef = ref(db, "users/" + currentUID);
+  const snap = await get(userRef);
 
-      const snap = await get(ref(db, "users/" + currentUID));
-
-      if (snap.exists()) {
-        showScreen("home");
-      } else {
-        showScreen("username");
-      }
-    });
-  });
+  if (snap.exists()) {
+    // Existing user
+    showScreen("home");
+  } else {
+    // New user
+    showScreen("username");
+  }
+});
 
 /* ===============================
-   SAVE USERNAME
+   SAVE USERNAME (UNIQUE)
    =============================== */
 saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
@@ -119,7 +117,9 @@ saveUsernameBtn.onclick = async () => {
   }
 
   await set(lockRef, currentUID);
-  await set(ref(db, "users/" + currentUID), { username });
+  await set(ref(db, "users/" + currentUID), {
+    username
+  });
 
   showScreen("home");
 };
@@ -129,5 +129,5 @@ saveUsernameBtn.onclick = async () => {
    =============================== */
 logoutBtn.onclick = async () => {
   await signOut(auth);
-  location.reload();
+  showScreen("login");
 };
