@@ -358,3 +358,22 @@ function openChat(friendUID, username) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
+
+chatForm.onsubmit = async e => {
+  e.preventDefault();
+
+  if (!chatInput.value.trim() || !currentChatUID) return;
+
+  const chatId =
+    currentUID < currentChatUID
+      ? currentUID + "_" + currentChatUID
+      : currentChatUID + "_" + currentUID;
+
+  await push(ref(db, "chats/" + chatId + "/messages"), {
+    from: currentUID,
+    text: chatInput.value.trim(),
+    time: Date.now()
+  });
+
+  chatInput.value = "";
+};
