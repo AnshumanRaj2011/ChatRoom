@@ -4,7 +4,7 @@ import {
   getDatabase,
   ref,
   get,
-  set,
+  set
   push,
   onValue,
   remove,
@@ -175,45 +175,68 @@ searchInput.addEventListener("input", async () => {
 
   let found = false;
 
-  usernamesSnap.forEach(child => {
-    const username = child.key;
-    const uid = child.val();
+usernamesSnap.forEach(async child => {
+  const username = child.key;
+  const uid = child.val();
 
-    if (!username.startsWith(query)) return;
+  if (!username.startsWith(query)) return;
 
-    found = true;
-    const row = document.createElement("div");
-    row.className = "list-item";
+  found = true;
 
-    // SELF
-    if (uid === currentUID) {
-      row.innerHTML = `<span>@${username}</span><span>You</span>`;
-      searchResults.appendChild(row);
-      return;
-    }
+  const row = document.createElement("div");
+  row.className = "list-item";
 
-    // ADD FRIEND
-    const addBtn = document.createElement("button");
-    addBtn.className = "primary-btn";
-    addBtn.textContent = "Add";
-
-    addBtn.onclick = async () => {
-      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-        time: Date.now()
-      });
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    };
-
-    row.innerHTML = `<span>@${username}</span>`;
-    row.appendChild(addBtn);
+  // 👤 SELF
+  if (uid === currentUID) {
+    row.innerHTML = `<span>@${username}</span><span>You</span>`;
     searchResults.appendChild(row);
-  });
-
-  if (!found) {
-    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+    return;
   }
+
+  // 🤝 FRIEND CHECK
+  const isFriendSnap = await get(
+    ref(db, `friends/${currentUID}/${uid}`)
+  );
+
+  if (isFriendSnap.exists()) {
+    row.innerHTML = `<span>@${username}</span><span>Friend</span>`;
+    searchResults.appendChild(row);
+    return;
+  }
+
+  // 📩 REQUEST CHECK
+  const requestSnap = await get(
+    ref(db, `friend_requests/${uid}/${currentUID}`)
+  );
+
+  if (requestSnap.exists()) {
+    row.innerHTML = `<span>@${username}</span><span>Sent</span>`;
+    searchResults.appendChild(row);
+    return;
+  }
+
+  // ➕ ADD FRIEND
+  const addBtn = document.createElement("button");
+  addBtn.className = "primary-btn";
+  addBtn.textContent = "Add";
+
+  addBtn.onclick = async () => {
+    await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+      time: Date.now()
+    });
+    addBtn.textContent = "Sent";
+    addBtn.disabled = true;
+  };
+
+  row.innerHTML = `<span>@${username}</span>`;
+  row.appendChild(addBtn);
+  searchResults.appendChild(row);
 });
+
+// ❌ NO MATCH
+if (!found) {
+  searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+}
 
 /* ================= REQUESTS ================= */
 function loadRequests() {
