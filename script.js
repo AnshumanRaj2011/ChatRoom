@@ -56,6 +56,7 @@ function showScreen(name) {
 /* ===============================
    DOM
    =============================== */
+const friendsList = document.getElementById("friends-list");
 const googleLoginBtn = document.getElementById("google-login-btn");
 const saveUsernameBtn = document.getElementById("save-username-btn");
 const usernameInput = document.getElementById("username-input");
@@ -76,6 +77,7 @@ const requestList = document.getElementById("request-list");
    =============================== */
 let currentUID = null;
 let requestsListenerRef = null;
+let friendsListenerRef = null;
 
 /* ===============================
    START
@@ -106,7 +108,12 @@ onAuthStateChanged(auth, async user => {
   currentUID = user.uid;
 
   const snap = await get(ref(db, "users/" + currentUID));
-  showScreen(snap.exists() ? "home" : "username");
+  if (snap.exists()) {
+    showScreen("home");
+    loadFriends();
+  } else {
+    showScreen("username");
+  }
 });
 
 /* ===============================
@@ -116,7 +123,7 @@ saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
 
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
-    alert("Username must be at least 3 characters and contain no spaces");
+    alert("Username must be at least 3 characters (letters, numbers, _)");
     return;
   }
 
@@ -130,6 +137,7 @@ saveUsernameBtn.onclick = async () => {
   await set(ref(db, "users/" + currentUID), { username });
 
   showScreen("home");
+  loadFriends();
 };
 
 /* ===============================
@@ -137,6 +145,7 @@ saveUsernameBtn.onclick = async () => {
    =============================== */
 logoutBtn.onclick = async () => {
   if (requestsListenerRef) off(requestsListenerRef);
+  if (friendsListenerRef) off(friendsListenerRef);
   await signOut(auth);
   showScreen("login");
 };
@@ -160,7 +169,7 @@ btnRequests.onclick = () => {
 btnBackRequests.onclick = () => showScreen("home");
 
 /* ===============================
-   SEARCH USERS (PARTIAL)
+   SEARCH USERS
    =============================== */
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
@@ -198,6 +207,10 @@ searchInput.addEventListener("input", async () => {
 
     addBtn.onclick = async () => {
       const reqRef = ref(db, `friend_requests/${uid}/${currentUID}`);
+      if ((await get(reqRef)).exists()) {
+        alert("Request already sent");
+        return;
+      }
       await set(reqRef, { time: Date.now() });
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
@@ -255,6 +268,7 @@ function loadRequests() {
         await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
         await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+        loadFriends();
       };
 
       rejectBtn.onclick = async () => {
@@ -266,5 +280,42 @@ function loadRequests() {
       div.appendChild(rejectBtn);
       requestList.appendChild(div);
     });
+  });
+}
+
+/* ===============================
+   LOAD FRIENDS (🔥 FIXED)
+   =============================== */
+function loadFriends() {
+  friendsList.innerHTML = "";
+
+  if (!currentUID) return;
+
+  if (friendsListenerRef) off(friendsListenerRef);
+
+  friendsListenerRef = ref(db, "friends/" + currentUID);
+
+  onValue(friendsListenerRef, async snap => {
+    friendsList.innerHTML = "";
+
+    if (!snap.exists()) {
+      friendsList.innerHTML = `<p class="empty-text">No friends yet</p>`;
+      return;
+    }
+
+    const friendUIDs = Object.keys(snap.val());
+
+    for (const friendUID of friendUIDs) {
+      const userSnap = await get(ref(db, "users/" + friendUID));
+      if (!userSnap.exists()) continue;
+
+      const username = userSnap.val().username;
+
+      const div = document.createElement("div");
+      div.className = "list-item";
+      div.innerHTML = `<span>@${username}</span>`;
+
+      friendsList.appendChild(div);
+    }
   });
 }
