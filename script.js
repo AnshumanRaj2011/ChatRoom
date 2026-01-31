@@ -279,7 +279,7 @@ function loadRequests() {
 
   // 3️⃣ Switch screen & refresh
   showScreen("home");
-  
+      loadFriends(); // 🔥 THIS WAS MISSING
 };
 
       reject.onclick = async () => {
