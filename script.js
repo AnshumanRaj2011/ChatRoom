@@ -266,6 +266,8 @@ function loadRequests() {
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
       };
 
+      row.onclick = () => openChat(friendUID, userSnap.val().username);
+
       row.appendChild(name);
       row.appendChild(accept);
       row.appendChild(reject);
