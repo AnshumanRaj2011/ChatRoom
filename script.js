@@ -229,11 +229,14 @@ function loadRequests() {
       reject.textContent = "Reject";
 
       accept.onclick = async () => {
-        await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
-        await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-        loadFriends();
-      };
+  await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+  await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+
+  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+
+  // 🔥 FORCE refresh
+  loadFriends();
+};
 
       reject.onclick = async () => {
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
@@ -251,7 +254,10 @@ function loadRequests() {
 function loadFriends() {
   friendsList.innerHTML = "";
 
+  if (!currentUID) return;
+
   if (friendsListenerRef) off(friendsListenerRef);
+
   friendsListenerRef = ref(db, "friends/" + currentUID);
 
   onValue(friendsListenerRef, async snap => {
@@ -262,23 +268,23 @@ function loadFriends() {
       return;
     }
 
-    for (const uid of Object.keys(snap.val())) {
-      const uSnap = await get(ref(db, "users/" + uid));
-      if (!uSnap.exists()) continue;
+    for (const friendUID of Object.keys(snap.val())) {
+      const userSnap = await get(ref(db, "users/" + friendUID));
+      if (!userSnap.exists()) continue;
 
       const row = document.createElement("div");
       row.className = "list-item";
 
       const name = document.createElement("span");
-      name.textContent = "@" + uSnap.val().username;
+      name.textContent = "@" + userSnap.val().username;
 
       const removeBtn = document.createElement("button");
       removeBtn.className = "primary-btn";
       removeBtn.textContent = "Remove";
 
       removeBtn.onclick = async () => {
-        await remove(ref(db, `friends/${currentUID}/${uid}`));
-        await remove(ref(db, `friends/${uid}/${currentUID}`));
+        await remove(ref(db, `friends/${currentUID}/${friendUID}`));
+        await remove(ref(db, `friends/${friendUID}/${currentUID}`));
       };
 
       row.appendChild(name);
