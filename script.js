@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { off } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 import {
   getDatabase,
   ref,
@@ -222,12 +222,21 @@ searchInput.addEventListener("input", async () => {
 /* ===============================
    LOAD FRIEND REQUESTS
    =============================== */
+let requestsListenerRef = null;
+
 function loadRequests() {
   requestList.innerHTML = "";
 
-  const reqRef = ref(db, "friend_requests/" + currentUID);
+  if (!currentUID) return;
 
-  onValue(reqRef, async snap => {
+  // Detach old listener if exists
+  if (requestsListenerRef) {
+    off(requestsListenerRef);
+  }
+
+  requestsListenerRef = ref(db, "friend_requests/" + currentUID);
+
+  onValue(requestsListenerRef, async snap => {
     requestList.innerHTML = "";
 
     if (!snap.exists()) {
@@ -237,6 +246,7 @@ function loadRequests() {
 
     snap.forEach(async child => {
       const fromUID = child.key;
+
       const userSnap = await get(ref(db, "users/" + fromUID));
       if (!userSnap.exists()) return;
 
