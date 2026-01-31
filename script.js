@@ -45,7 +45,8 @@ const screens = {
   username: document.getElementById("screen-username"),
   home: document.getElementById("screen-home"),
   search: document.getElementById("screen-search"),
-  requests: document.getElementById("screen-requests")
+  requests: document.getElementById("screen-requests"),
+  chat: document.getElementById("screen-chat")
 };
 
 function showScreen(name) {
@@ -72,12 +73,21 @@ const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
 const requestList = document.getElementById("request-list");
 
+/* CHAT DOM */
+const chatMessages = document.getElementById("chat-messages");
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+const chatUsername = document.getElementById("chat-username");
+const btnBackChat = document.getElementById("btn-back-chat");
+
 /* ===============================
    STATE
    =============================== */
 let currentUID = null;
 let requestsListenerRef = null;
 let friendsListenerRef = null;
+let chatListenerRef = null;
+let currentChatId = null;
 
 /* ===============================
    START
@@ -142,6 +152,7 @@ saveUsernameBtn.onclick = async () => {
 logoutBtn.onclick = async () => {
   if (requestsListenerRef) off(requestsListenerRef);
   if (friendsListenerRef) off(friendsListenerRef);
+  if (chatListenerRef) off(chatListenerRef);
   await signOut(auth);
   showScreen("login");
 };
@@ -164,11 +175,15 @@ btnRequests.onclick = () => {
 
 btnBackRequests.onclick = () => showScreen("home");
 
-/* ===============================
-   SEARCH USERS (FIXED)
-   =============================== */
+btnBackChat.onclick = () => {
+  if (chatListenerRef) off(chatListenerRef);
+  showScreen("home");
+};
 
-    searchInput.addEventListener("input", async () => {
+/* ===============================
+   SEARCH USERS
+   =============================== */
+searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
@@ -184,49 +199,36 @@ btnBackRequests.onclick = () => showScreen("home");
   }
 
   let friends = {};
-try {
-  const friendsSnap = await get(ref(db, `friends/${currentUID}`));
-  friends = friendsSnap.exists() ? friendsSnap.val() : {};
-} catch (e) {
-  friends = {}; // no friends yet OR no permission
-}
+  try {
+    const friendsSnap = await get(ref(db, `friends/${currentUID}`));
+    friends = friendsSnap.exists() ? friendsSnap.val() : {};
+  } catch {
+    friends = {};
+  }
+
   let found = false;
 
   for (const username of Object.keys(usernamesSnap.val())) {
     if (!username.includes(query)) continue;
 
     const uid = usernamesSnap.val()[username];
-
-    // 🔒 SAFE blocked check (NEVER break search)
-    let isBlocked = false;
-    try {
-      const blockedSnap = await get(ref(db, `blocked/${uid}/${currentUID}`));
-      isBlocked = blockedSnap.exists();
-    } catch (e) {
-      isBlocked = false; // no permission → treat as not blocked
-    }
-    if (isBlocked) continue;
-
     found = true;
 
     const div = document.createElement("div");
     div.className = "list-item";
 
-    // 👤 yourself
     if (uid === currentUID) {
       div.innerHTML = `<span>@${username}</span><span>That’s you 🙂</span>`;
       searchResults.appendChild(div);
       continue;
     }
 
-    // 👥 already friend
     if (friends && friends[uid]) {
       div.innerHTML = `<span>@${username}</span><span>Friends ✓</span>`;
       searchResults.appendChild(div);
       continue;
     }
 
-    // ➕ add friend
     const addBtn = document.createElement("button");
     addBtn.className = "primary-btn";
     addBtn.textContent = "Add";
@@ -261,6 +263,7 @@ function loadRequests() {
 
   onValue(requestsListenerRef, async snap => {
     requestList.innerHTML = "";
+
     if (!snap.exists()) {
       requestList.innerHTML = `<p class="empty-text">No requests</p>`;
       return;
@@ -294,7 +297,7 @@ function loadRequests() {
 }
 
 /* ===============================
-   LOAD FRIENDS
+   LOAD FRIENDS + CHAT BUTTON
    =============================== */
 function loadFriends() {
   friendsList.innerHTML = "";
@@ -305,6 +308,7 @@ function loadFriends() {
 
   onValue(friendsListenerRef, async snap => {
     friendsList.innerHTML = "";
+
     if (!snap.exists()) {
       friendsList.innerHTML = `<p class="empty-text">No friends yet</p>`;
       return;
@@ -318,20 +322,71 @@ function loadFriends() {
       const div = document.createElement("div");
       div.className = "list-item";
 
+      const chatBtn = document.createElement("button");
+      chatBtn.className = "primary-btn";
+      chatBtn.textContent = "Chat";
+      chatBtn.onclick = () => openChat(friendUID, username);
+
       const removeBtn = document.createElement("button");
       removeBtn.className = "primary-btn";
       removeBtn.textContent = "Remove";
-
       removeBtn.onclick = async () => {
         await remove(ref(db, `friends/${currentUID}/${friendUID}`));
         await remove(ref(db, `friends/${friendUID}/${currentUID}`));
-        await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
       };
 
       div.innerHTML = `<span>@${username}</span>`;
+      div.appendChild(chatBtn);
       div.appendChild(removeBtn);
       friendsList.appendChild(div);
     }
   });
 }
+
+/* ===============================
+   1 TO 1 CHAT
+   =============================== */
+function openChat(friendUID, username) {
+  currentChatId = [currentUID, friendUID].sort().join("_");
+  chatUsername.textContent = "@" + username;
+  showScreen("chat");
+  loadChatMessages();
+}
+
+function loadChatMessages() {
+  chatMessages.innerHTML = "";
+
+  if (chatListenerRef) off(chatListenerRef);
+  chatListenerRef = ref(db, `chats/${currentChatId}/messages`);
+
+  onValue(chatListenerRef, snap => {
+    chatMessages.innerHTML = "";
+    if (!snap.exists()) return;
+
+    snap.forEach(child => {
+      const msg = child.val();
+      const div = document.createElement("div");
+      div.className = "list-item";
+      div.innerHTML =
+        `<b>${msg.from === currentUID ? "You" : "Friend"}:</b> ${msg.text}`;
+      chatMessages.appendChild(div);
+    });
+  });
+}
+
+chatForm.onsubmit = async e => {
+  e.preventDefault();
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  await set(
+    ref(db, `chats/${currentChatId}/messages/${Date.now()}`),
+    {
+      from: currentUID,
+      text,
+      time: Date.now()
+    }
+  );
+
+  chatInput.value = "";
+};
