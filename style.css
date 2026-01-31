@@ -25,7 +25,7 @@ body {
 }
 
 /* ===============================
-   CENTER BOX (LOGIN / USERNAME)
+   CENTER BOX
    =============================== */
 .center-box {
   min-height: 100vh;
@@ -38,11 +38,6 @@ body {
   text-align: center;
 }
 
-.center-box h1,
-.center-box h2 {
-  margin: 0;
-}
-
 /* ===============================
    INPUTS
    =============================== */
@@ -53,7 +48,6 @@ input {
   border-radius: 8px;
   border: 1px solid #e91e63;
   font-size: 15px;
-  outline: none;
 }
 
 input:focus {
@@ -100,11 +94,6 @@ button {
   color: #fff;
 }
 
-.top-bar h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
 .top-actions {
   display: flex;
   gap: 8px;
@@ -135,6 +124,11 @@ button {
   align-items: center;
 }
 
+/* 🔥 FIX 1: request buttons layout */
+.list-item button {
+  margin-left: 6px;
+}
+
 /* ===============================
    EMPTY TEXT
    =============================== */
@@ -142,20 +136,6 @@ button {
   text-align: center;
   color: #777;
   margin-top: 20px;
-}
-
-/* ===============================
-   REQUEST ITEMS
-   =============================== */
-.request-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.request-actions {
-  display: flex;
-  gap: 6px;
 }
 
 /* ===============================
@@ -172,13 +152,13 @@ button {
 .chat-list {
   height: calc(100vh - 120px);
   overflow-y: auto;
+  padding: 10px;
 }
 
 .chat-form {
   display: flex;
   gap: 6px;
   padding: 10px;
-  background: #fde4ec;
   border-top: 1px solid #e91e63;
 }
 
@@ -186,17 +166,7 @@ button {
   flex: 1;
 }
 
-.chat-form button {
-  background: #e91e63;
-  color: #fff;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-}
-
-/* ===============================
-   CHAT MESSAGE BUBBLES
-   =============================== */
+/* 🔥 FIX 2: chat bubbles */
 .chat-message {
   max-width: 75%;
   padding: 8px 12px;
@@ -218,14 +188,10 @@ button {
 }
 
 /* ===============================
-   MOBILE FIXES
+   MOBILE
    =============================== */
 @media (max-width: 480px) {
   .top-bar h3 {
     font-size: 16px;
-  }
-
-  button {
-    font-size: 13px;
   }
 }
