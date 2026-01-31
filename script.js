@@ -229,11 +229,15 @@ function loadRequests() {
       reject.textContent = "Reject";
 
       accept.onclick = async () => {
+  // add friends BOTH sides
   await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
   await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
 
-  // 🔥 FIX
+  // remove requests BOTH sides (critical)
+  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+  await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
+
+  // UI refresh
   showScreen("home");
   loadFriends();
 };
