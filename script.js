@@ -42,9 +42,9 @@ const screens = {
   username: document.getElementById("screen-username"),
   home: document.getElementById("screen-home"),
   search: document.getElementById("screen-search"),
-  requests: document.getElementById("screen-requests")
+  requests: document.getElementById("screen-requests"),
+  chat: document.getElementById("screen-chat") // 🔥 ADD THIS
 };
-
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove("active"));
   screens[name].classList.add("active");
