@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<!-- ================= LOGIN ================= -->
+<!-- LOGIN -->
 <div id="screen-login" class="screen active">
   <div class="center-box">
     <h1>ChatRoom</h1>
@@ -18,22 +18,16 @@
   </div>
 </div>
 
-<!-- ================= USERNAME ================= -->
+<!-- USERNAME -->
 <div id="screen-username" class="screen">
   <div class="center-box">
     <h2>Create Username</h2>
-    <input
-      id="username-input"
-      placeholder="username (no spaces)"
-      autocomplete="off"
-    />
-    <button id="save-username-btn" class="primary-btn">
-      Continue
-    </button>
+    <input id="username-input" placeholder="username (no spaces)" />
+    <button id="save-username-btn" class="primary-btn">Continue</button>
   </div>
 </div>
 
-<!-- ================= HOME ================= -->
+<!-- HOME (🔥 FIXED) -->
 <div id="screen-home" class="screen">
   <div class="top-bar">
     <h3>Friends</h3>
@@ -47,23 +41,18 @@
   <div id="friends-list" class="list"></div>
 </div>
 
-<!-- ================= SEARCH ================= -->
+<!-- SEARCH -->
 <div id="screen-search" class="screen">
   <div class="top-bar">
     <button id="btn-back-search">←</button>
     <h3>Search</h3>
   </div>
 
-  <input
-    id="search-input"
-    placeholder="Search username"
-    autocomplete="off"
-  />
-
+  <input id="search-input" placeholder="Search username" />
   <div id="search-results" class="list"></div>
 </div>
 
-<!-- ================= REQUESTS ================= -->
+<!-- REQUESTS -->
 <div id="screen-requests" class="screen">
   <div class="top-bar">
     <button id="btn-back-requests">←</button>
@@ -73,25 +62,6 @@
   <div id="request-list" class="list"></div>
 </div>
 
-<!-- ================= CHAT ================= -->
-<div id="screen-chat" class="screen">
-  <div class="top-bar">
-    <button id="btn-back-chat">←</button>
-    <h3 id="chat-username"></h3>
-  </div>
-
-  <div id="chat-messages" class="list chat-list"></div>
-
-  <form id="chat-form" class="chat-form">
-    <input
-      id="chat-input"
-      placeholder="Type a message…"
-      autocomplete="off"
-    />
-    <button type="submit">Send</button>
-  </form>
-</div>
-
 <script type="module" src="script.js"></script>
 </body>
-</html
+</html>
