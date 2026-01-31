@@ -183,63 +183,56 @@ searchInput.addEventListener("input", async () => {
   const myFriends = friendsSnap.exists() ? friendsSnap.val() : {};
 const myRequests = requestsSnap.exists() ? requestsSnap.val() : {};
 
-  let hasMatch = false;
+let hasMatch = false;
 
-  usernamesSnap.forEach(child => {
-    const username = child.key;
-    const uid = child.val();
+usernamesSnap.forEach(child => {
+  const username = child.key;
+  const uid = child.val();
 
-    if (!username.startsWith(query)) return;
+  if (!username.startsWith(query)) return;
 
-    hasMatch = true;
+  hasMatch = true;
 
-    const row = document.createElement("div");
-    row.className = "list-item";
+  const row = document.createElement("div");
+  row.className = "list-item";
 
-    // 👤 YOU
-    if (uid === currentUID) {
-      row.innerHTML = `<span>@${username}</span><span>You</span>`;
-      searchResults.appendChild(row);
-      return;
-    }
-
-    // 🤝 FRIEND
-    if (myFriends[uid]) {
-      row.innerHTML = `<span>@${username}</span><span>Friend</span>`;
-      searchResults.appendChild(row);
-      return;
-    }
-
-    // 📩 SENT REQUEST
-if (myRequests[uid]) {
-  row.innerHTML = `<span>@${username}</span><span>Sent</span>`;
-  searchResults.appendChild(row);
-  return;
-}
-
-    // ➕ ADD FRIEND
-    const addBtn = document.createElement("button");
-    addBtn.className = "primary-btn";
-    addBtn.textContent = "Add";
-
-    addBtn.onclick = async () => {
-      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-        time: Date.now()
-      });
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    };
-
-    row.innerHTML = `<span>@${username}</span>`;
-    row.appendChild(addBtn);
+  // 👤 YOU
+  if (uid === currentUID) {
+    row.innerHTML = `<span>@${username}</span><span>You</span>`;
     searchResults.appendChild(row);
-  });
-
-  if (!hasMatch) {
-    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+    return;
   }
+
+  // 🤝 FRIEND
+  if (myFriends[uid]) {
+    row.innerHTML = `<span>@${username}</span><span>Friend</span>`;
+    searchResults.appendChild(row);
+    return;
+  }
+
+  // ➕ ADD FRIEND
+  const addBtn = document.createElement("button");
+  addBtn.className = "primary-btn";
+  addBtn.textContent = "Add";
+
+  addBtn.onclick = async () => {
+    await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+      time: Date.now()
+    });
+    addBtn.textContent = "Sent";
+    addBtn.disabled = true;
+  };
+
+  row.innerHTML = `<span>@${username}</span>`;
+  row.appendChild(addBtn);
+  searchResults.appendChild(row);
 });
-        
+
+// 🚨 THIS PART WAS MISSING
+if (!hasMatch) {
+  searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+}
+}); // ✅ closes searchInput.addEventListener        
 
   
 /* ================= REQUESTS ================= */
