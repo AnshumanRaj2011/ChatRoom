@@ -151,6 +151,12 @@ btnRequests.onclick = () => {
 };
 btnBackRequests.onclick = () => showScreen("home");
 
+btnBackChat.onclick = () => {
+  if (chatListenerRef) off(chatListenerRef);
+  currentChatUID = null;
+  showScreen("home");
+};
+
 /* ================= SEARCH ================= */
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
