@@ -169,7 +169,7 @@ btnRequests.onclick = () => {
 btnBackRequests.onclick = () => showScreen("home");
 
 /* ===============================
-   SEARCH USERS (BLOCK SAFE)
+   SEARCH USERS
    =============================== */
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
@@ -206,9 +206,11 @@ searchInput.addEventListener("input", async () => {
         alert("You cannot send request");
         return;
       }
+
       await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
         time: Date.now()
       });
+
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
     };
@@ -220,7 +222,7 @@ searchInput.addEventListener("input", async () => {
 });
 
 /* ===============================
-   LOAD REQUESTS
+   LOAD FRIEND REQUESTS
    =============================== */
 function loadRequests() {
   requestList.innerHTML = "";
@@ -231,7 +233,10 @@ function loadRequests() {
 
   onValue(requestsListenerRef, async snap => {
     requestList.innerHTML = "";
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+      requestList.innerHTML = `<p class="empty-text">No requests</p>`;
+      return;
+    }
 
     snap.forEach(async child => {
       const fromUID = child.key;
@@ -253,7 +258,10 @@ function loadRequests() {
       acceptBtn.onclick = async () => {
         await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
         await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+        await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
+
         loadFriends();
       };
 
@@ -305,11 +313,19 @@ function loadFriends() {
       removeBtn.onclick = async () => {
         await remove(ref(db, `friends/${currentUID}/${friendUID}`));
         await remove(ref(db, `friends/${friendUID}/${currentUID}`));
+
+        // 🔥 critical fix
+        await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
+        await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
       };
 
       blockBtn.onclick = async () => {
         await remove(ref(db, `friends/${currentUID}/${friendUID}`));
         await remove(ref(db, `friends/${friendUID}/${currentUID}`));
+
+        await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
+        await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
+
         await set(ref(db, `blocked/${currentUID}/${friendUID}`), true);
       };
 
