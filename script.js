@@ -61,11 +61,21 @@ const btnBackRequests = document.getElementById("btn-back-requests");
 const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
 const requestList = document.getElementById("request-list");
+/* ================= CHAT DOM ================= */
+const chatUsername = document.getElementById("chat-username");
+const chatMessages = document.getElementById("chat-messages");
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+const btnBackChat = document.getElementById("btn-back-chat");
 
 /* ================= STATE ================= */
 let currentUID = null;
 let friendsListenerRef = null;
 let requestsListenerRef = null;
+
+/* 🔥 CHAT STATE (ADD, DO NOT REPLACE) */
+let currentChatUID = null;
+let chatListenerRef = null;
 
 /* ================= START ================= */
 showScreen("login");
