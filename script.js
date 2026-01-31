@@ -55,7 +55,6 @@ const logoutBtn = document.getElementById("btn-logout");
 
 const btnSearch = document.getElementById("btn-search");
 const btnBackSearch = document.getElementById("btn-back-search");
-
 const btnRequests = document.getElementById("btn-requests");
 const btnBackRequests = document.getElementById("btn-back-requests");
 
@@ -138,7 +137,7 @@ btnRequests.onclick = () => {
 };
 btnBackRequests.onclick = () => showScreen("home");
 
-/* ================= SEARCH ================= */
+/* ================= SEARCH (FIXED) ================= */
 searchInput.addEventListener("input", async () => {
   const q = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
@@ -165,32 +164,39 @@ searchInput.addEventListener("input", async () => {
     if (uid === currentUID) {
       right.textContent = "You";
       right.style.color = "#777";
+      div.appendChild(left);
+      div.appendChild(right);
+      searchResults.appendChild(div);
+      return; // 🔥 IMPORTANT FIX
     }
-    else if (friends[uid]) {
+
+    if (friends[uid]) {
       right.textContent = "Friends ✓";
       right.style.color = "green";
-    }
-    else {
-      const addBtn = document.createElement("button");
-      addBtn.className = "primary-btn";
-      addBtn.textContent = "Add";
-
-      addBtn.onclick = async () => {
-        await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
-        addBtn.textContent = "Sent";
-        addBtn.disabled = true;
-      };
-
-      right.appendChild(addBtn);
+      div.appendChild(left);
+      div.appendChild(right);
+      searchResults.appendChild(div);
+      return;
     }
 
+    const addBtn = document.createElement("button");
+    addBtn.className = "primary-btn";
+    addBtn.textContent = "Add";
+
+    addBtn.onclick = async () => {
+      await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    };
+
+    right.appendChild(addBtn);
     div.appendChild(left);
     div.appendChild(right);
     searchResults.appendChild(div);
   });
 });
 
-/* ================= REQUESTS ================= */
+/* ================= REQUESTS (FIXED) ================= */
 function loadRequests() {
   requestList.innerHTML = "";
 
@@ -209,14 +215,13 @@ function loadRequests() {
       const uSnap = await get(ref(db, "users/" + fromUID));
       if (!uSnap.exists()) continue;
 
-      const div = document.createElement("div");
-      div.className = "list-item request-item";
+      const row = document.createElement("div");
+      row.className = "list-item";
 
       const name = document.createElement("span");
       name.textContent = "@" + uSnap.val().username;
 
       const actions = document.createElement("div");
-      actions.className = "request-actions";
 
       const accept = document.createElement("button");
       accept.className = "primary-btn";
@@ -230,7 +235,6 @@ function loadRequests() {
         await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
         await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-        await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
         loadFriends();
       };
 
@@ -240,10 +244,9 @@ function loadRequests() {
 
       actions.appendChild(accept);
       actions.appendChild(reject);
-
-      div.appendChild(name);
-      div.appendChild(actions);
-      requestList.appendChild(div);
+      row.appendChild(name);
+      row.appendChild(actions);
+      requestList.appendChild(row);
     }
   });
 }
