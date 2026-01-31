@@ -334,13 +334,16 @@ function openChat(friendUID, username) {
       ? currentUID + "_" + friendUID
       : friendUID + "_" + currentUID;
 
+  // ✅ CREATE CHAT MEMBERS (REQUIRED FOR FIREBASE RULES)
+  set(ref(db, "chats/" + chatId + "/members/" + currentUID), true);
+  set(ref(db, "chats/" + chatId + "/members/" + friendUID), true);
+
   if (chatListenerRef) off(chatListenerRef);
 
   chatListenerRef = ref(db, "chats/" + chatId + "/messages");
 
   onValue(chatListenerRef, snap => {
     chatMessages.innerHTML = "";
-
     if (!snap.exists()) return;
 
     snap.forEach(msg => {
@@ -355,22 +358,3 @@ function openChat(friendUID, username) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
-
-chatForm.onsubmit = async e => {
-  e.preventDefault();
-
-  if (!chatInput.value.trim() || !currentChatUID) return;
-
-  const chatId =
-    currentUID < currentChatUID
-      ? currentUID + "_" + currentChatUID
-      : currentChatUID + "_" + currentUID;
-
-  await push(ref(db, "chats/" + chatId + "/messages"), {
-    from: currentUID,
-    text: chatInput.value.trim(),
-    time: Date.now()
-  });
-
-  chatInput.value = "";
-};
