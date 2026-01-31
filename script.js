@@ -266,7 +266,7 @@ function loadRequests() {
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
       };
 
-      row.onclick = () => openChat(friendUID, userSnap.val().username);
+    
 
       row.appendChild(name);
       row.appendChild(accept);
@@ -312,6 +312,8 @@ function loadFriends() {
         await remove(ref(db, `friends/${currentUID}/${friendUID}`));
         await remove(ref(db, `friends/${friendUID}/${currentUID}`));
       };
+
+      row.onclick = () => openChat(friendUID, userSnap.val().username);
 
       row.appendChild(name);
       row.appendChild(removeBtn);
