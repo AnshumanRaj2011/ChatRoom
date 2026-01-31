@@ -167,7 +167,8 @@ btnBackRequests.onclick = () => showScreen("home");
 /* ===============================
    SEARCH USERS (FIXED)
    =============================== */
-searchInput.addEventListener("input", async () => {
+
+    searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
@@ -182,10 +183,13 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
-  // get current friends once
+  let friends = {};
+try {
   const friendsSnap = await get(ref(db, `friends/${currentUID}`));
-  const friends = friendsSnap.exists() ? friendsSnap.val() : {};
-
+  friends = friendsSnap.exists() ? friendsSnap.val() : {};
+} catch (e) {
+  friends = {}; // no friends yet OR no permission
+}
   let found = false;
 
   for (const username of Object.keys(usernamesSnap.val())) {
@@ -193,9 +197,15 @@ searchInput.addEventListener("input", async () => {
 
     const uid = usernamesSnap.val()[username];
 
-    // 🔒 blocked check
-    const blockedSnap = await get(ref(db, `blocked/${uid}/${currentUID}`));
-    if (blockedSnap.exists()) continue;
+    // 🔒 SAFE blocked check (NEVER break search)
+    let isBlocked = false;
+    try {
+      const blockedSnap = await get(ref(db, `blocked/${uid}/${currentUID}`));
+      isBlocked = blockedSnap.exists();
+    } catch (e) {
+      isBlocked = false; // no permission → treat as not blocked
+    }
+    if (isBlocked) continue;
 
     found = true;
 
