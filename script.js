@@ -297,100 +297,36 @@ function loadRequests() {
 }
 
 /* ================= FRIENDS ================= */
-function loadRequests() {
-  requestList.innerHTML = "";
+function loadFriends() {
+  friendsList.innerHTML = "";
 
-  if (requestsListenerRef) off(requestsListenerRef);
-  requestsListenerRef = ref(db, "friend_requests/" + currentUID);
+  if (!currentUID) return;
+  if (friendsListenerRef) off(friendsListenerRef);
 
-  onValue(requestsListenerRef, async snap => {
-    requestList.innerHTML = "";
+  friendsListenerRef = ref(db, "friends/" + currentUID);
+
+  onValue(friendsListenerRef, async snap => {
+    friendsList.innerHTML = "";
 
     if (!snap.exists()) {
-      requestList.innerHTML = `<p class="empty-text">No requests</p>`;
+      friendsList.innerHTML = `<p class="empty-text">No friends yet</p>`;
       return;
     }
 
-    for (const fromUID of Object.keys(snap.val())) {
-      const uSnap = await get(ref(db, "users/" + fromUID));
-      if (!uSnap.exists()) continue;
+    for (const friendUID of Object.keys(snap.val())) {
+      const userSnap = await get(ref(db, "users/" + friendUID));
+      if (!userSnap.exists()) continue;
 
       const row = document.createElement("div");
       row.className = "list-item";
 
       const name = document.createElement("span");
-      name.textContent = "@" + uSnap.val().username;
-
-      const accept = document.createElement("button");
-      accept.className = "primary-btn";
-      accept.textContent = "Accept";
-
-      const reject = document.createElement("button");
-      reject.className = "danger-btn";
-      reject.textContent = "Reject";
-
-      accept.onclick = async () => {
-  // 1️⃣ Add friends on BOTH sides
-  await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
-  await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-
-  // 2️⃣ Remove requests on BOTH sides (🔥 THIS WAS MISSING)
-  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-  await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
-
-  // 3️⃣ Switch screen & refresh
-  showScreen("home");
-      
-};
-
-      reject.onclick = async () => {
-        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-      };
-
-    
+      name.textContent = "@" + userSnap.val().username;
+      name.onclick = () => openChat(friendUID, userSnap.val().username);
 
       row.appendChild(name);
-      row.appendChild(accept);
-      row.appendChild(reject);
-      requestList.appendChild(row);
+      friendsList.appendChild(row);
     }
-  });
-}
-
-function openChat(friendUID, username) {
-  currentChatUID = friendUID;
-  chatUsername.textContent = "@" + username;
-  chatMessages.innerHTML = "";
-
-  showScreen("chat");
-
-  const chatId =
-    currentUID < friendUID
-      ? currentUID + "_" + friendUID
-      : friendUID + "_" + currentUID;
-
-  // ✅ CREATE CHAT MEMBERS (REQUIRED FOR FIREBASE RULES)
-  set(ref(db, "chats/" + chatId + "/members/" + currentUID), true);
-  set(ref(db, "chats/" + chatId + "/members/" + friendUID), true);
-
-  if (chatListenerRef) off(chatListenerRef);
-
-  chatListenerRef = ref(db, "chats/" + chatId + "/messages");
-
-  onValue(chatListenerRef, snap => {
-    chatMessages.innerHTML = "";
-    if (!snap.exists()) return;
-
-    snap.forEach(msg => {
-      const data = msg.val();
-      const div = document.createElement("div");
-      div.className =
-        "chat-message " + (data.from === currentUID ? "me" : "other");
-      div.textContent = data.text;
-      chatMessages.appendChild(div);
-    });
-
-    chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
 
