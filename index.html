@@ -24,7 +24,6 @@
     <h2>Create Username</h2>
     <input
       id="username-input"
-      type="text"
       placeholder="username (no spaces)"
       autocomplete="off"
     />
@@ -38,12 +37,13 @@
 <div id="screen-home" class="screen">
   <div class="top-bar">
     <h3>Friends</h3>
-    <div>
-      <button id="btn-search">＋</button>
-      <button id="btn-requests">🔔</button>
-      <button id="btn-logout">Logout</button>
+    <div class="top-actions">
+      <button id="btn-search" title="Search users">＋</button>
+      <button id="btn-requests" title="Friend requests">🔔</button>
+      <button id="btn-logout" title="Logout">Logout</button>
     </div>
   </div>
+
   <div id="friends-list" class="list"></div>
 </div>
 
@@ -53,12 +53,13 @@
     <button id="btn-back-search">←</button>
     <h3>Search</h3>
   </div>
+
   <input
     id="search-input"
-    type="text"
     placeholder="Search username"
     autocomplete="off"
   />
+
   <div id="search-results" class="list"></div>
 </div>
 
@@ -66,8 +67,9 @@
 <div id="screen-requests" class="screen">
   <div class="top-bar">
     <button id="btn-back-requests">←</button>
-    <h3>Requests</h3>
+    <h3>Friend Requests</h3>
   </div>
+
   <div id="request-list" class="list"></div>
 </div>
 
@@ -78,13 +80,12 @@
     <h3 id="chat-username"></h3>
   </div>
 
-  <div id="chat-messages" class="list"></div>
+  <div id="chat-messages" class="list chat-list"></div>
 
-  <form id="chat-form" autocomplete="off">
+  <form id="chat-form" class="chat-form">
     <input
       id="chat-input"
-      type="text"
-      placeholder="Type message..."
+      placeholder="Type a message…"
       autocomplete="off"
     />
     <button type="submit">Send</button>
