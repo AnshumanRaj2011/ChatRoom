@@ -237,6 +237,7 @@ usernamesSnap.forEach(async child => {
 if (!found) {
   searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
 }
+  });
 
 /* ================= REQUESTS ================= */
 function loadRequests() {
