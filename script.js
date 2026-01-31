@@ -1,11 +1,12 @@
-import { off } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getDatabase,
   ref,
   get,
   set,
   onValue,
-  remove
+  remove,
+  off
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 import {
   getAuth,
@@ -75,6 +76,7 @@ const requestList = document.getElementById("request-list");
    STATE
    =============================== */
 let currentUID = null;
+let requestsListenerRef = null;
 
 /* ===============================
    INITIAL SCREEN
@@ -222,14 +224,11 @@ searchInput.addEventListener("input", async () => {
 /* ===============================
    LOAD FRIEND REQUESTS
    =============================== */
-let requestsListenerRef = null;
-
 function loadRequests() {
   requestList.innerHTML = "";
 
   if (!currentUID) return;
 
-  // Detach old listener if exists
   if (requestsListenerRef) {
     off(requestsListenerRef);
   }
