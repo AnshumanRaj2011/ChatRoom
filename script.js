@@ -231,10 +231,10 @@ function loadRequests() {
       accept.onclick = async () => {
   await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
   await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-
   await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
 
-  // 🔥 FORCE refresh
+  // 🔥 FIX
+  showScreen("home");
   loadFriends();
 };
 
