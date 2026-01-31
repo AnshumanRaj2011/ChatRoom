@@ -12,7 +12,9 @@
 <div id="screen-login" class="screen active">
   <div class="center-box">
     <h1>ChatRoom</h1>
-    <button id="google-login-btn" class="primary-btn">Login with Google</button>
+    <button id="google-login-btn" class="primary-btn">
+      Login with Google
+    </button>
   </div>
 </div>
 
@@ -20,8 +22,15 @@
 <div id="screen-username" class="screen">
   <div class="center-box">
     <h2>Create Username</h2>
-    <input id="username-input" placeholder="username (no spaces)" />
-    <button id="save-username-btn" class="primary-btn">Continue</button>
+    <input
+      id="username-input"
+      type="text"
+      placeholder="username (no spaces)"
+      autocomplete="off"
+    />
+    <button id="save-username-btn" class="primary-btn">
+      Continue
+    </button>
   </div>
 </div>
 
@@ -44,7 +53,12 @@
     <button id="btn-back-search">←</button>
     <h3>Search</h3>
   </div>
-  <input id="search-input" placeholder="Search username" />
+  <input
+    id="search-input"
+    type="text"
+    placeholder="Search username"
+    autocomplete="off"
+  />
   <div id="search-results" class="list"></div>
 </div>
 
@@ -63,9 +77,16 @@
     <button id="btn-back-chat">←</button>
     <h3 id="chat-username"></h3>
   </div>
+
   <div id="chat-messages" class="list"></div>
-  <form id="chat-form">
-    <input id="chat-input" placeholder="Type message..." />
+
+  <form id="chat-form" autocomplete="off">
+    <input
+      id="chat-input"
+      type="text"
+      placeholder="Type message..."
+      autocomplete="off"
+    />
     <button type="submit">Send</button>
   </form>
 </div>
