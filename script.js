@@ -16,9 +16,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-/* ===============================
-   FIREBASE CONFIG
-   =============================== */
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
   authDomain: "chatroom-37278.firebaseapp.com",
@@ -29,17 +27,12 @@ const firebaseConfig = {
   appId: "1:738726516362:web:0dc5ea006158c1d3c9bf73"
 };
 
-/* ===============================
-   INIT
-   =============================== */
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-/* ===============================
-   SCREENS
-   =============================== */
+/* ================= SCREENS ================= */
 const screens = {
   login: document.getElementById("screen-login"),
   username: document.getElementById("screen-username"),
@@ -53,9 +46,7 @@ function showScreen(name) {
   screens[name].classList.add("active");
 }
 
-/* ===============================
-   DOM
-   =============================== */
+/* ================= DOM ================= */
 const friendsList = document.getElementById("friends-list");
 const googleLoginBtn = document.getElementById("google-login-btn");
 const saveUsernameBtn = document.getElementById("save-username-btn");
@@ -72,28 +63,20 @@ const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
 const requestList = document.getElementById("request-list");
 
-/* ===============================
-   STATE
-   =============================== */
+/* ================= STATE ================= */
 let currentUID = null;
-let requestsListenerRef = null;
 let friendsListenerRef = null;
+let requestsListenerRef = null;
 
-/* ===============================
-   START
-   =============================== */
+/* ================= START ================= */
 showScreen("login");
 
-/* ===============================
-   GOOGLE LOGIN
-   =============================== */
+/* ================= LOGIN ================= */
 googleLoginBtn.onclick = async () => {
   await signInWithPopup(auth, provider);
 };
 
-/* ===============================
-   AUTH STATE
-   =============================== */
+/* ================= AUTH ================= */
 onAuthStateChanged(auth, async user => {
   if (!user) {
     currentUID = null;
@@ -112,12 +95,9 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-/* ===============================
-   SAVE USERNAME
-   =============================== */
+/* ================= USERNAME ================= */
 saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
-
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
     alert("Invalid username");
     return;
@@ -136,149 +116,117 @@ saveUsernameBtn.onclick = async () => {
   loadFriends();
 };
 
-/* ===============================
-   LOGOUT
-   =============================== */
+/* ================= LOGOUT ================= */
 logoutBtn.onclick = async () => {
-  if (requestsListenerRef) off(requestsListenerRef);
   if (friendsListenerRef) off(friendsListenerRef);
+  if (requestsListenerRef) off(requestsListenerRef);
   await signOut(auth);
   showScreen("login");
 };
 
-/* ===============================
-   NAVIGATION
-   =============================== */
+/* ================= NAV ================= */
 btnSearch.onclick = () => {
   searchInput.value = "";
   searchResults.innerHTML = "";
   showScreen("search");
 };
-
 btnBackSearch.onclick = () => showScreen("home");
 
 btnRequests.onclick = () => {
   showScreen("requests");
   loadRequests();
 };
-
 btnBackRequests.onclick = () => showScreen("home");
 
-/* ===============================
-   SEARCH USERS (FIXED)
-   =============================== */
-
-    searchInput.addEventListener("input", async () => {
-  const query = searchInput.value.trim().toLowerCase();
+/* ================= SEARCH ================= */
+searchInput.addEventListener("input", async () => {
+  const q = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
-
-  if (query.length < 2) {
-    searchResults.innerHTML = `<p class="empty-text">Type at least 2 letters</p>`;
-    return;
-  }
+  if (q.length < 2) return;
 
   const usernamesSnap = await get(ref(db, "usernames"));
-  if (!usernamesSnap.exists()) {
-    searchResults.innerHTML = `<p class="empty-text">No users found</p>`;
-    return;
-  }
+  if (!usernamesSnap.exists()) return;
 
-  let friends = {};
-try {
   const friendsSnap = await get(ref(db, `friends/${currentUID}`));
-  friends = friendsSnap.exists() ? friendsSnap.val() : {};
-} catch (e) {
-  friends = {}; // no friends yet OR no permission
-}
-  let found = false;
+  const friends = friendsSnap.exists() ? friendsSnap.val() : {};
 
-  for (const username of Object.keys(usernamesSnap.val())) {
-    if (!username.includes(query)) continue;
+  usernamesSnap.forEach(child => {
+    if (!child.key.includes(q)) return;
 
-    const uid = usernamesSnap.val()[username];
-
-    // ðŸ”’ SAFE blocked check (NEVER break search)
-    let isBlocked = false;
-    try {
-      const blockedSnap = await get(ref(db, `blocked/${uid}/${currentUID}`));
-      isBlocked = blockedSnap.exists();
-    } catch (e) {
-      isBlocked = false; // no permission â†’ treat as not blocked
-    }
-    if (isBlocked) continue;
-
-    found = true;
-
+    const uid = child.val();
     const div = document.createElement("div");
     div.className = "list-item";
 
-    // ðŸ‘¤ yourself
+    const left = document.createElement("span");
+    left.textContent = "@" + child.key;
+
+    const right = document.createElement("span");
+
     if (uid === currentUID) {
-      div.innerHTML = `<span>@${username}</span><span>Thatâ€™s you ðŸ™‚</span>`;
-      searchResults.appendChild(div);
-      continue;
+      right.textContent = "You";
+      right.style.color = "#777";
+    }
+    else if (friends[uid]) {
+      right.textContent = "Friends ✓";
+      right.style.color = "green";
+    }
+    else {
+      const addBtn = document.createElement("button");
+      addBtn.className = "primary-btn";
+      addBtn.textContent = "Add";
+
+      addBtn.onclick = async () => {
+        await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+        addBtn.textContent = "Sent";
+        addBtn.disabled = true;
+      };
+
+      right.appendChild(addBtn);
     }
 
-    // ðŸ‘¥ already friend
-    if (friends && friends[uid]) {
-      div.innerHTML = `<span>@${username}</span><span>Friends âœ“</span>`;
-      searchResults.appendChild(div);
-      continue;
-    }
-
-    // âž• add friend
-    const addBtn = document.createElement("button");
-    addBtn.className = "primary-btn";
-    addBtn.textContent = "Add";
-
-    addBtn.onclick = async () => {
-      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-        time: Date.now()
-      });
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    };
-
-    div.innerHTML = `<span>@${username}</span>`;
-    div.appendChild(addBtn);
+    div.appendChild(left);
+    div.appendChild(right);
     searchResults.appendChild(div);
-  }
-
-  if (!found) {
-    searchResults.innerHTML = `<p class="empty-text">No matching users</p>`;
-  }
+  });
 });
 
-/* ===============================
-   LOAD REQUESTS
-   =============================== */
+/* ================= REQUESTS ================= */
 function loadRequests() {
   requestList.innerHTML = "";
-  if (!currentUID) return;
 
   if (requestsListenerRef) off(requestsListenerRef);
   requestsListenerRef = ref(db, "friend_requests/" + currentUID);
 
   onValue(requestsListenerRef, async snap => {
     requestList.innerHTML = "";
+
     if (!snap.exists()) {
       requestList.innerHTML = `<p class="empty-text">No requests</p>`;
       return;
     }
 
     for (const fromUID of Object.keys(snap.val())) {
-      const userSnap = await get(ref(db, "users/" + fromUID));
-      if (!userSnap.exists()) continue;
+      const uSnap = await get(ref(db, "users/" + fromUID));
+      if (!uSnap.exists()) continue;
 
-      const username = userSnap.val().username;
       const div = document.createElement("div");
-      div.className = "list-item";
+      div.className = "list-item request-item";
 
-      const acceptBtn = document.createElement("button");
-      acceptBtn.className = "primary-btn";
-      acceptBtn.textContent = "Accept";
+      const name = document.createElement("span");
+      name.textContent = "@" + uSnap.val().username;
 
-      acceptBtn.onclick = async () => {
+      const actions = document.createElement("div");
+      actions.className = "request-actions";
+
+      const accept = document.createElement("button");
+      accept.className = "primary-btn";
+      accept.textContent = "Accept";
+
+      const reject = document.createElement("button");
+      reject.className = "danger-btn";
+      reject.textContent = "Reject";
+
+      accept.onclick = async () => {
         await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
         await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
@@ -286,52 +234,57 @@ function loadRequests() {
         loadFriends();
       };
 
-      div.innerHTML = `<span>@${username}</span>`;
-      div.appendChild(acceptBtn);
+      reject.onclick = async () => {
+        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+      };
+
+      actions.appendChild(accept);
+      actions.appendChild(reject);
+
+      div.appendChild(name);
+      div.appendChild(actions);
       requestList.appendChild(div);
     }
   });
 }
 
-/* ===============================
-   LOAD FRIENDS
-   =============================== */
+/* ================= FRIENDS ================= */
 function loadFriends() {
   friendsList.innerHTML = "";
-  if (!currentUID) return;
 
   if (friendsListenerRef) off(friendsListenerRef);
   friendsListenerRef = ref(db, "friends/" + currentUID);
 
   onValue(friendsListenerRef, async snap => {
     friendsList.innerHTML = "";
+
     if (!snap.exists()) {
       friendsList.innerHTML = `<p class="empty-text">No friends yet</p>`;
       return;
     }
 
-    for (const friendUID of Object.keys(snap.val())) {
-      const userSnap = await get(ref(db, "users/" + friendUID));
-      if (!userSnap.exists()) continue;
+    for (const uid of Object.keys(snap.val())) {
+      const uSnap = await get(ref(db, "users/" + uid));
+      if (!uSnap.exists()) continue;
 
-      const username = userSnap.val().username;
       const div = document.createElement("div");
       div.className = "list-item";
+
+      const name = document.createElement("span");
+      name.textContent = "@" + uSnap.val().username;
 
       const removeBtn = document.createElement("button");
       removeBtn.className = "primary-btn";
       removeBtn.textContent = "Remove";
 
       removeBtn.onclick = async () => {
-        await remove(ref(db, `friends/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friends/${friendUID}/${currentUID}`));
-        await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
+        await remove(ref(db, `friends/${currentUID}/${uid}`));
+        await remove(ref(db, `friends/${uid}/${currentUID}`));
       };
 
-      div.innerHTML = `<span>@${username}</span>`;
+      div.appendChild(name);
       div.appendChild(removeBtn);
       friendsList.appendChild(div);
     }
   });
-        }
+}
