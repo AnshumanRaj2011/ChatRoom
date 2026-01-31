@@ -1,12 +1,20 @@
 /* ===============================
-   BASE
+   RESET
    =============================== */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #ffb6c1;
+* {
+  box-sizing: border-box;
 }
 
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #fde4ec;
+  color: #222;
+}
+
+/* ===============================
+   SCREENS
+   =============================== */
 .screen {
   display: none;
   min-height: 100vh;
@@ -25,30 +33,14 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
+  gap: 16px;
   padding: 20px;
+  text-align: center;
 }
 
-.tagline {
-  color: #8b0000;
-  margin-bottom: 30px;
-}
-
-/* ===============================
-   BUTTONS
-   =============================== */
-.primary-btn {
-  background: red;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.primary-btn:active {
-  background: darkred;
+.center-box h1,
+.center-box h2 {
+  margin: 0;
 }
 
 /* ===============================
@@ -58,27 +50,69 @@ input {
   width: 100%;
   max-width: 300px;
   padding: 12px;
-  margin: 15px 0;
-  border-radius: 6px;
-  border: 1px solid #ff4d4d;
+  border-radius: 8px;
+  border: 1px solid #e91e63;
   font-size: 15px;
+  outline: none;
+}
+
+input:focus {
+  border-color: #c2185b;
+}
+
+/* ===============================
+   BUTTONS
+   =============================== */
+button {
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.primary-btn {
+  background: #e91e63;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+}
+
+.primary-btn:active {
+  background: #c2185b;
+}
+
+.danger-btn {
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
 }
 
 /* ===============================
    TOP BAR
    =============================== */
 .top-bar {
-  background: #ff69b4;
-  padding: 12px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #e91e63;
+  color: #fff;
 }
 
-.top-actions button {
-  margin-left: 6px;
-  background: red;
-  color: white;
+.top-bar h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.top-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.top-bar button {
+  background: #c2185b;
+  color: #fff;
   border: none;
   padding: 6px 10px;
   border-radius: 6px;
@@ -92,25 +126,106 @@ input {
 }
 
 .list-item {
-  background: #ffe4e9;
-  padding: 12px;
+  background: #fff;
+  padding: 10px;
+  margin-bottom: 8px;
   border-radius: 8px;
-  margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+/* ===============================
+   EMPTY TEXT
+   =============================== */
 .empty-text {
   text-align: center;
-  color: #8b0000;
-  margin-top: 30px;
+  color: #777;
+  margin-top: 20px;
 }
 
 /* ===============================
-   HINT
+   REQUEST ITEMS
    =============================== */
-.hint {
-  font-size: 13px;
-  color: #b00020;
+.request-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.request-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ===============================
+   SEARCH INPUT
+   =============================== */
+#screen-search input {
+  margin: 10px;
+  max-width: calc(100% - 20px);
+}
+
+/* ===============================
+   CHAT
+   =============================== */
+.chat-list {
+  height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.chat-form {
+  display: flex;
+  gap: 6px;
+  padding: 10px;
+  background: #fde4ec;
+  border-top: 1px solid #e91e63;
+}
+
+.chat-form input {
+  flex: 1;
+}
+
+.chat-form button {
+  background: #e91e63;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+/* ===============================
+   CHAT MESSAGE BUBBLES
+   =============================== */
+.chat-message {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.chat-message.me {
+  background: #e91e63;
+  color: #fff;
+  margin-left: auto;
+}
+
+.chat-message.other {
+  background: #f1f1f1;
+  color: #000;
+  margin-right: auto;
+}
+
+/* ===============================
+   MOBILE FIXES
+   =============================== */
+@media (max-width: 480px) {
+  .top-bar h3 {
+    font-size: 16px;
+  }
+
+  button {
+    font-size: 13px;
+  }
 }
