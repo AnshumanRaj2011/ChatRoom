@@ -171,34 +171,52 @@ searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
-  if (query.length < 2) return;
-
-  const snap = await get(ref(db, "usernames"));
-  if (!snap.exists()) {
-    searchResults.innerHTML = `<p class="empty-text">No users</p>`;
+  if (query.length < 2) {
+    searchResults.innerHTML = `<p class="empty-text">Type at least 2 letters</p>`;
     return;
   }
 
+  const usernamesSnap = await get(ref(db, "usernames"));
+  if (!usernamesSnap.exists()) {
+    searchResults.innerHTML = `<p class="empty-text">No users found</p>`;
+    return;
+  }
+
+  // get current friends once
+  const friendsSnap = await get(ref(db, `friends/${currentUID}`));
+  const friends = friendsSnap.exists() ? friendsSnap.val() : {};
+
   let found = false;
 
-  for (const username of Object.keys(snap.val())) {
+  for (const username of Object.keys(usernamesSnap.val())) {
     if (!username.includes(query)) continue;
 
-    const uid = snap.val()[username];
+    const uid = usernamesSnap.val()[username];
 
-    // block check
-    if ((await get(ref(db, `blocked/${uid}/${currentUID}`))).exists()) continue;
+    // 🔒 blocked check
+    const blockedSnap = await get(ref(db, `blocked/${uid}/${currentUID}`));
+    if (blockedSnap.exists()) continue;
 
     found = true;
+
     const div = document.createElement("div");
     div.className = "list-item";
 
+    // 👤 yourself
     if (uid === currentUID) {
-      div.innerHTML = `<span>@${username}</span><span>You</span>`;
+      div.innerHTML = `<span>@${username}</span><span>That’s you 🙂</span>`;
       searchResults.appendChild(div);
       continue;
     }
 
+    // 👥 already friend
+    if (friends && friends[uid]) {
+      div.innerHTML = `<span>@${username}</span><span>Friends ✓</span>`;
+      searchResults.appendChild(div);
+      continue;
+    }
+
+    // ➕ add friend
     const addBtn = document.createElement("button");
     addBtn.className = "primary-btn";
     addBtn.textContent = "Add";
