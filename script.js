@@ -359,6 +359,7 @@ function openChat(friendUID, username) {
   });
 }
 
+// ================= SEND MESSAGE =================
 chatForm.onsubmit = async e => {
   e.preventDefault();
 
