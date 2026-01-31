@@ -43,7 +43,7 @@ const screens = {
   home: document.getElementById("screen-home"),
   search: document.getElementById("screen-search"),
   requests: document.getElementById("screen-requests"),
-  chat: document.getElementById("screen-chat") // 🔥 ADD THIS
+  chat: document.getElementById("screen-chat") // ✅ REQUIRED
 };
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove("active"));
