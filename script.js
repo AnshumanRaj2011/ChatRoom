@@ -158,7 +158,7 @@ btnBackChat.onclick = () => {
 };
 
 /* ================= SEARCH ================= */
-searchInput.addEventListener("input", async () => {});
+searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
