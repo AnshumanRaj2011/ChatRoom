@@ -137,18 +137,17 @@ btnRequests.onclick = () => {
 };
 btnBackRequests.onclick = () => showScreen("home");
 
-/* ================= SEARCH (FIXED) ================= */
+/* ================= SEARCH ================= */
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
-  if (query.length < 1) {
+  if (!query) {
     searchResults.innerHTML = `<p class="empty-text">Type a username</p>`;
     return;
   }
 
   const usernamesSnap = await get(ref(db, "usernames"));
-
   if (!usernamesSnap.exists()) {
     searchResults.innerHTML = `<p class="empty-text">No users yet</p>`;
     return;
@@ -157,42 +156,38 @@ searchInput.addEventListener("input", async () => {
   let found = false;
 
   usernamesSnap.forEach(child => {
-    const username = child.key.toLowerCase();
+    const username = child.key;
     const uid = child.val();
 
     if (!username.startsWith(query)) return;
 
     found = true;
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-    const div = document.createElement("div");
-    div.className = "list-item";
-
-    // 👤 SELF
+    // SELF
     if (uid === currentUID) {
-      div.innerHTML = `<span>@${username}</span><span>You</span>`;
-      searchResults.appendChild(div);
+      row.innerHTML = `<span>@${username}</span><span>You</span>`;
+      searchResults.appendChild(row);
       return;
     }
 
-    // ➕ ADD FRIEND
+    // ADD FRIEND
     const addBtn = document.createElement("button");
     addBtn.className = "primary-btn";
     addBtn.textContent = "Add";
 
-    accept.onclick = async () => {
-  await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
-  await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-  await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
-  loadFriends();
-};
+    addBtn.onclick = async () => {
+      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+        time: Date.now()
+      });
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
     };
 
-    div.innerHTML = `<span>@${username}</span>`;
-    div.appendChild(addBtn);
-    searchResults.appendChild(div);
+    row.innerHTML = `<span>@${username}</span>`;
+    row.appendChild(addBtn);
+    searchResults.appendChild(row);
   });
 
   if (!found) {
@@ -200,7 +195,7 @@ searchInput.addEventListener("input", async () => {
   }
 });
 
-/* ================= REQUESTS (FIXED) ================= */
+/* ================= REQUESTS ================= */
 function loadRequests() {
   requestList.innerHTML = "";
 
@@ -225,8 +220,6 @@ function loadRequests() {
       const name = document.createElement("span");
       name.textContent = "@" + uSnap.val().username;
 
-      const actions = document.createElement("div");
-
       const accept = document.createElement("button");
       accept.className = "primary-btn";
       accept.textContent = "Accept";
@@ -246,10 +239,9 @@ function loadRequests() {
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
       };
 
-      actions.appendChild(accept);
-      actions.appendChild(reject);
       row.appendChild(name);
-      row.appendChild(actions);
+      row.appendChild(accept);
+      row.appendChild(reject);
       requestList.appendChild(row);
     }
   });
@@ -274,8 +266,8 @@ function loadFriends() {
       const uSnap = await get(ref(db, "users/" + uid));
       if (!uSnap.exists()) continue;
 
-      const div = document.createElement("div");
-      div.className = "list-item";
+      const row = document.createElement("div");
+      row.className = "list-item";
 
       const name = document.createElement("span");
       name.textContent = "@" + uSnap.val().username;
@@ -289,9 +281,9 @@ function loadFriends() {
         await remove(ref(db, `friends/${uid}/${currentUID}`));
       };
 
-      div.appendChild(name);
-      div.appendChild(removeBtn);
-      friendsList.appendChild(div);
+      row.appendChild(name);
+      row.appendChild(removeBtn);
+      friendsList.appendChild(row);
     }
   });
 }
