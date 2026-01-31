@@ -1,3 +1,5 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+
 import {
   getDatabase,
   ref,
@@ -8,16 +10,7 @@ import {
   remove,
   off
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  get,
-  set,
-  onValue,
-  remove,
-  off
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
 import {
   getAuth,
   GoogleAuthProvider,
@@ -25,6 +18,7 @@ import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
