@@ -88,11 +88,7 @@ showScreen("login");
    GOOGLE LOGIN
    =============================== */
 googleLoginBtn.onclick = async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    alert(e.message);
-  }
+  await signInWithPopup(auth, provider);
 };
 
 /* ===============================
@@ -123,7 +119,7 @@ saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
 
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
-    alert("Username must be at least 3 characters");
+    alert("Invalid username");
     return;
   }
 
@@ -169,32 +165,38 @@ btnRequests.onclick = () => {
 btnBackRequests.onclick = () => showScreen("home");
 
 /* ===============================
-   SEARCH USERS
+   SEARCH USERS (FIXED)
    =============================== */
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
+
   if (query.length < 2) return;
 
   const snap = await get(ref(db, "usernames"));
-  if (!snap.exists()) return;
+  if (!snap.exists()) {
+    searchResults.innerHTML = `<p class="empty-text">No users</p>`;
+    return;
+  }
 
-  snap.forEach(async child => {
-    const username = child.key;
-    const uid = child.val();
+  let found = false;
 
-    if (!username.includes(query)) return;
+  for (const username of Object.keys(snap.val())) {
+    if (!username.includes(query)) continue;
+
+    const uid = snap.val()[username];
 
     // block check
-    if ((await get(ref(db, `blocked/${uid}/${currentUID}`))).exists()) return;
+    if ((await get(ref(db, `blocked/${uid}/${currentUID}`))).exists()) continue;
 
+    found = true;
     const div = document.createElement("div");
     div.className = "list-item";
 
     if (uid === currentUID) {
       div.innerHTML = `<span>@${username}</span><span>You</span>`;
       searchResults.appendChild(div);
-      return;
+      continue;
     }
 
     const addBtn = document.createElement("button");
@@ -202,15 +204,9 @@ searchInput.addEventListener("input", async () => {
     addBtn.textContent = "Add";
 
     addBtn.onclick = async () => {
-      if ((await get(ref(db, `blocked/${uid}/${currentUID}`))).exists()) {
-        alert("You cannot send request");
-        return;
-      }
-
       await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
         time: Date.now()
       });
-
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
     };
@@ -218,11 +214,15 @@ searchInput.addEventListener("input", async () => {
     div.innerHTML = `<span>@${username}</span>`;
     div.appendChild(addBtn);
     searchResults.appendChild(div);
-  });
+  }
+
+  if (!found) {
+    searchResults.innerHTML = `<p class="empty-text">No matching users</p>`;
+  }
 });
 
 /* ===============================
-   LOAD FRIEND REQUESTS
+   LOAD REQUESTS
    =============================== */
 function loadRequests() {
   requestList.innerHTML = "";
@@ -238,10 +238,9 @@ function loadRequests() {
       return;
     }
 
-    snap.forEach(async child => {
-      const fromUID = child.key;
+    for (const fromUID of Object.keys(snap.val())) {
       const userSnap = await get(ref(db, "users/" + fromUID));
-      if (!userSnap.exists()) return;
+      if (!userSnap.exists()) continue;
 
       const username = userSnap.val().username;
       const div = document.createElement("div");
@@ -251,34 +250,23 @@ function loadRequests() {
       acceptBtn.className = "primary-btn";
       acceptBtn.textContent = "Accept";
 
-      const rejectBtn = document.createElement("button");
-      rejectBtn.className = "primary-btn";
-      rejectBtn.textContent = "Reject";
-
       acceptBtn.onclick = async () => {
         await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
         await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
         await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
-
         loadFriends();
-      };
-
-      rejectBtn.onclick = async () => {
-        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
       };
 
       div.innerHTML = `<span>@${username}</span>`;
       div.appendChild(acceptBtn);
-      div.appendChild(rejectBtn);
       requestList.appendChild(div);
-    });
+    }
   });
 }
 
 /* ===============================
-   LOAD FRIENDS + REMOVE / BLOCK
+   LOAD FRIENDS
    =============================== */
 function loadFriends() {
   friendsList.innerHTML = "";
@@ -306,32 +294,15 @@ function loadFriends() {
       removeBtn.className = "primary-btn";
       removeBtn.textContent = "Remove";
 
-      const blockBtn = document.createElement("button");
-      blockBtn.className = "primary-btn";
-      blockBtn.textContent = "Block";
-
       removeBtn.onclick = async () => {
         await remove(ref(db, `friends/${currentUID}/${friendUID}`));
         await remove(ref(db, `friends/${friendUID}/${currentUID}`));
-
-        // 🔥 critical fix
         await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
         await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
-      };
-
-      blockBtn.onclick = async () => {
-        await remove(ref(db, `friends/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friends/${friendUID}/${currentUID}`));
-
-        await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
-
-        await set(ref(db, `blocked/${currentUID}/${friendUID}`), true);
       };
 
       div.innerHTML = `<span>@${username}</span>`;
       div.appendChild(removeBtn);
-      div.appendChild(blockBtn);
       friendsList.appendChild(div);
     }
   });
