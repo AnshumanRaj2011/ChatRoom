@@ -139,61 +139,65 @@ btnBackRequests.onclick = () => showScreen("home");
 
 /* ================= SEARCH (FIXED) ================= */
 searchInput.addEventListener("input", async () => {
-  const q = searchInput.value.trim().toLowerCase();
+  const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
-  if (q.length < 2) return;
+
+  if (query.length < 1) {
+    searchResults.innerHTML = `<p class="empty-text">Type a username</p>`;
+    return;
+  }
 
   const usernamesSnap = await get(ref(db, "usernames"));
-  if (!usernamesSnap.exists()) return;
 
-  const friendsSnap = await get(ref(db, `friends/${currentUID}`));
-  const friends = friendsSnap.exists() ? friendsSnap.val() : {};
+  if (!usernamesSnap.exists()) {
+    searchResults.innerHTML = `<p class="empty-text">No users yet</p>`;
+    return;
+  }
+
+  let found = false;
 
   usernamesSnap.forEach(child => {
-    if (!child.key.includes(q)) return;
-
+    const username = child.key.toLowerCase();
     const uid = child.val();
+
+    if (!username.startsWith(query)) return;
+
+    found = true;
+
     const div = document.createElement("div");
     div.className = "list-item";
 
-    const left = document.createElement("span");
-    left.textContent = "@" + child.key;
-
-    const right = document.createElement("span");
-
+    // 👤 SELF
     if (uid === currentUID) {
-      right.textContent = "You";
-      right.style.color = "#777";
-      div.appendChild(left);
-      div.appendChild(right);
-      searchResults.appendChild(div);
-      return; // 🔥 IMPORTANT FIX
-    }
-
-    if (friends[uid]) {
-      right.textContent = "Friends ✓";
-      right.style.color = "green";
-      div.appendChild(left);
-      div.appendChild(right);
+      div.innerHTML = `<span>@${username}</span><span>You</span>`;
       searchResults.appendChild(div);
       return;
     }
 
+    // ➕ ADD FRIEND
     const addBtn = document.createElement("button");
     addBtn.className = "primary-btn";
     addBtn.textContent = "Add";
 
-    addBtn.onclick = async () => {
-      await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+    accept.onclick = async () => {
+  await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+  await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+  await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
+  loadFriends();
+};
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
     };
 
-    right.appendChild(addBtn);
-    div.appendChild(left);
-    div.appendChild(right);
+    div.innerHTML = `<span>@${username}</span>`;
+    div.appendChild(addBtn);
     searchResults.appendChild(div);
   });
+
+  if (!found) {
+    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+  }
 });
 
 /* ================= REQUESTS (FIXED) ================= */
