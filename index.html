@@ -1,103 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ChatRoom</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-<!-- ===============================
-     1. LANDING / LOGIN SCREEN
-     =============================== -->
+<!-- LOGIN -->
 <div id="screen-login" class="screen active">
   <div class="center-box">
     <h1>ChatRoom</h1>
-    <p class="tagline">Connect with friends privately</p>
-
-    <button id="google-login-btn" class="primary-btn">
-      Login with Google
-    </button>
+    <button id="google-login-btn" class="primary-btn">Login with Google</button>
   </div>
 </div>
 
-<!-- ===============================
-     2. USERNAME SETUP (NEW USER)
-     =============================== -->
+<!-- USERNAME -->
 <div id="screen-username" class="screen">
   <div class="center-box">
-    <h2>Create your username</h2>
-
-    <input
-      type="text"
-      id="username-input"
-      placeholder="username (no spaces)"
-    >
-
-    <button id="save-username-btn" class="primary-btn">
-      Continue
-    </button>
-
-    <p class="hint">
-      Only letters, numbers, underscore (_).<br>
-      Cannot be changed later.
-    </p>
+    <h2>Create Username</h2>
+    <input id="username-input" placeholder="username (no spaces)" />
+    <button id="save-username-btn" class="primary-btn">Continue</button>
   </div>
 </div>
 
-<!-- ===============================
-     3. HOME / FRIEND LIST
-     =============================== -->
+<!-- HOME -->
 <div id="screen-home" class="screen">
   <div class="top-bar">
-    <h2>Friends</h2>
-    <div class="top-actions">
+    <h3>Friends</h3>
+    <div>
       <button id="btn-search">＋</button>
       <button id="btn-requests">🔔</button>
       <button id="btn-logout">Logout</button>
     </div>
   </div>
-
-  <div id="friends-list" class="list">
-    <p class="empty-text">No friends yet</p>
-  </div>
+  <div id="friends-list" class="list"></div>
 </div>
 
-<!-- ===============================
-     4. SEARCH USERS
-     =============================== -->
+<!-- SEARCH -->
 <div id="screen-search" class="screen">
   <div class="top-bar">
-    <h2>Search User</h2>
     <button id="btn-back-search">←</button>
+    <h3>Search</h3>
   </div>
-
-  <input
-    type="text"
-    id="search-input"
-    placeholder="Search by username"
-  >
-
-  <div id="search-results" class="list">
-    <!-- user cards appear here -->
-  </div>
+  <input id="search-input" placeholder="Search username" />
+  <div id="search-results" class="list"></div>
 </div>
 
-<!-- ===============================
-     5. FRIEND REQUESTS
-     =============================== -->
+<!-- REQUESTS -->
 <div id="screen-requests" class="screen">
   <div class="top-bar">
-    <h2>Friend Requests</h2>
     <button id="btn-back-requests">←</button>
+    <h3>Requests</h3>
   </div>
-
-  <div id="request-list" class="list">
-    <p class="empty-text">No requests</p>
-  </div>
+  <div id="request-list" class="list"></div>
 </div>
 
-<script type="module" src="script.js?v=16"></script>
+<!-- CHAT -->
+<div id="screen-chat" class="screen">
+  <div class="top-bar">
+    <button id="btn-back-chat">←</button>
+    <h3 id="chat-username"></h3>
+  </div>
+  <div id="chat-messages" class="list"></div>
+  <form id="chat-form">
+    <input id="chat-input" placeholder="Type message..." />
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script type="module" src="script.js"></script>
 </body>
 </html>
