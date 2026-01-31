@@ -331,6 +331,8 @@ function loadFriends() {
       const name = document.createElement("span");
       name.textContent = "@" + userSnap.val().username;
 
+      name.onclick = () => openChat(friendUID, userSnap.val().username);
+
       const removeBtn = document.createElement("button");
       removeBtn.className = "primary-btn";
       removeBtn.textContent = "Remove";
@@ -344,8 +346,7 @@ function loadFriends() {
   await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
 };
 
-      row.onclick = () => openChat(friendUID, userSnap.val().username);
-
+      
       row.appendChild(name);
       row.appendChild(removeBtn);
       friendsList.appendChild(row);
