@@ -319,3 +319,56 @@ function loadFriends() {
     }
   });
 }
+
+function openChat(friendUID, username) {
+  currentChatUID = friendUID;
+  chatUsername.textContent = "@" + username;
+  chatMessages.innerHTML = "";
+
+  showScreen("chat");
+
+  const chatId =
+    currentUID < friendUID
+      ? currentUID + "_" + friendUID
+      : friendUID + "_" + currentUID;
+
+  if (chatListenerRef) off(chatListenerRef);
+
+  chatListenerRef = ref(db, "chats/" + chatId + "/messages");
+
+  onValue(chatListenerRef, snap => {
+    chatMessages.innerHTML = "";
+
+    if (!snap.exists()) return;
+
+    snap.forEach(msg => {
+      const data = msg.val();
+      const div = document.createElement("div");
+      div.className =
+        "chat-message " + (data.from === currentUID ? "me" : "other");
+      div.textContent = data.text;
+      chatMessages.appendChild(div);
+    });
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+}
+
+chatForm.onsubmit = async e => {
+  e.preventDefault();
+
+  if (!chatInput.value.trim() || !currentChatUID) return;
+
+  const chatId =
+    currentUID < currentChatUID
+      ? currentUID + "_" + currentChatUID
+      : currentChatUID + "_" + currentUID;
+
+  await push(ref(db, "chats/" + chatId + "/messages"), {
+    from: currentUID,
+    text: chatInput.value.trim(),
+    time: Date.now()
+  });
+
+  chatInput.value = "";
+};
