@@ -158,6 +158,7 @@ btnBackChat.onclick = () => {
 };
 
 /* ================= SEARCH ================= */
+
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
@@ -167,78 +168,80 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
-  const usernamesSnap = await get(ref(db, "usernames"));
+  // 🔥 FETCH DATA ONCE
+  const [usernamesSnap, friendsSnap, requestsSnap] = await Promise.all([
+    get(ref(db, "usernames")),
+    get(ref(db, `friends/${currentUID}`)),
+    get(ref(db, `friend_requests/${currentUID}`))
+  ]);
+
   if (!usernamesSnap.exists()) {
     searchResults.innerHTML = `<p class="empty-text">No users yet</p>`;
     return;
   }
 
-  let found = false;
+  const myFriends = friendsSnap.exists() ? friendsSnap.val() : {};
+  const allRequests = requestsSnap.exists() ? requestsSnap.val() : {};
 
-usernamesSnap.forEach(async child => {
-  const username = child.key;
-  const uid = child.val();
+  let hasMatch = false;
 
-  if (!username.startsWith(query)) return;
+  usernamesSnap.forEach(child => {
+    const username = child.key;
+    const uid = child.val();
 
-  found = true;
+    if (!username.startsWith(query)) return;
 
-  const row = document.createElement("div");
-  row.className = "list-item";
+    hasMatch = true;
 
-  // 👤 SELF
-  if (uid === currentUID) {
-    row.innerHTML = `<span>@${username}</span><span>You</span>`;
-    searchResults.appendChild(row);
-    return;
-  }
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-  // 🤝 FRIEND CHECK
-  const isFriendSnap = await get(
-    ref(db, `friends/${currentUID}/${uid}`)
-  );
+    // 👤 YOU
+    if (uid === currentUID) {
+      row.innerHTML = `<span>@${username}</span><span>You</span>`;
+      searchResults.appendChild(row);
+      return;
+    }
 
-  if (isFriendSnap.exists()) {
-    row.innerHTML = `<span>@${username}</span><span>Friend</span>`;
-    searchResults.appendChild(row);
-    return;
-  }
+    // 🤝 FRIEND
+    if (myFriends[uid]) {
+      row.innerHTML = `<span>@${username}</span><span>Friend</span>`;
+      searchResults.appendChild(row);
+      return;
+    }
 
-  // 📩 REQUEST CHECK
-  const requestSnap = await get(
-    ref(db, `friend_requests/${uid}/${currentUID}`)
-  );
-
-  if (requestSnap.exists()) {
-    row.innerHTML = `<span>@${username}</span><span>Sent</span>`;
-    searchResults.appendChild(row);
-    return;
-  }
-
-  // ➕ ADD FRIEND
-  const addBtn = document.createElement("button");
-  addBtn.className = "primary-btn";
-  addBtn.textContent = "Add";
-
-  addBtn.onclick = async () => {
-    await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-      time: Date.now()
-    });
-    addBtn.textContent = "Sent";
-    addBtn.disabled = true;
-  };
-
-  row.innerHTML = `<span>@${username}</span>`;
-  row.appendChild(addBtn);
+    // 📩 SENT REQUEST
+if (myRequests[uid]) {
+  row.innerHTML = `<span>@${username}</span><span>Sent</span>`;
   searchResults.appendChild(row);
-});
-
-// ❌ NO MATCH
-if (!found) {
-  searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+  return;
 }
+
+    // ➕ ADD FRIEND
+    const addBtn = document.createElement("button");
+    addBtn.className = "primary-btn";
+    addBtn.textContent = "Add";
+
+    addBtn.onclick = async () => {
+      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+        time: Date.now()
+      });
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    };
+
+    row.innerHTML = `<span>@${username}</span>`;
+    row.appendChild(addBtn);
+    searchResults.appendChild(row);
   });
 
+  if (!hasMatch) {
+    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+  }
+});
+        
+
+  
 /* ================= REQUESTS ================= */
 function loadRequests() {
   requestList.innerHTML = "";
@@ -333,9 +336,13 @@ function loadFriends() {
       removeBtn.textContent = "Remove";
 
       removeBtn.onclick = async () => {
-        await remove(ref(db, `friends/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friends/${friendUID}/${currentUID}`));
-      };
+  await remove(ref(db, `friends/${currentUID}/${friendUID}`));
+  await remove(ref(db, `friends/${friendUID}/${currentUID}`));
+
+  // 🔥 ALSO CLEAR REQUESTS
+  await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
+  await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
+};
 
       row.onclick = () => openChat(friendUID, userSnap.val().username);
 
