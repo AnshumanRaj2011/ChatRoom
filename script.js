@@ -181,7 +181,7 @@ searchInput.addEventListener("input", async () => {
   }
 
   const myFriends = friendsSnap.exists() ? friendsSnap.val() : {};
-  const allRequests = requestsSnap.exists() ? requestsSnap.val() : {};
+  const myRequests = requestsSnap.exists() ? requestsSnap.val() : {};
 
   let hasMatch = false;
 
