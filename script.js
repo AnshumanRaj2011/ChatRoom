@@ -69,7 +69,6 @@ const btnBackRequests = document.getElementById("btn-back-requests");
 
 const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
-
 const requestList = document.getElementById("request-list");
 
 /* ===============================
@@ -79,7 +78,7 @@ let currentUID = null;
 let requestsListenerRef = null;
 
 /* ===============================
-   INITIAL SCREEN
+   START
    =============================== */
 showScreen("login");
 
@@ -99,6 +98,7 @@ googleLoginBtn.onclick = async () => {
    =============================== */
 onAuthStateChanged(auth, async user => {
   if (!user) {
+    currentUID = null;
     showScreen("login");
     return;
   }
@@ -106,11 +106,7 @@ onAuthStateChanged(auth, async user => {
   currentUID = user.uid;
 
   const snap = await get(ref(db, "users/" + currentUID));
-  if (snap.exists()) {
-    showScreen("home");
-  } else {
-    showScreen("username");
-  }
+  showScreen(snap.exists() ? "home" : "username");
 });
 
 /* ===============================
@@ -120,17 +116,17 @@ saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
 
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
-    alert("Username must be at least 3 characters (letters, numbers, _)");
+    alert("Username must be at least 3 characters and contain no spaces");
     return;
   }
 
-  const lockRef = ref(db, "usernames/" + username);
-  if ((await get(lockRef)).exists()) {
+  const nameRef = ref(db, "usernames/" + username);
+  if ((await get(nameRef)).exists()) {
     alert("Username already taken");
     return;
   }
 
-  await set(lockRef, currentUID);
+  await set(nameRef, currentUID);
   await set(ref(db, "users/" + currentUID), { username });
 
   showScreen("home");
@@ -140,6 +136,7 @@ saveUsernameBtn.onclick = async () => {
    LOGOUT
    =============================== */
 logoutBtn.onclick = async () => {
+  if (requestsListenerRef) off(requestsListenerRef);
   await signOut(auth);
   showScreen("login");
 };
@@ -201,11 +198,6 @@ searchInput.addEventListener("input", async () => {
 
     addBtn.onclick = async () => {
       const reqRef = ref(db, `friend_requests/${uid}/${currentUID}`);
-      if ((await get(reqRef)).exists()) {
-        alert("Request already sent");
-        return;
-      }
-
       await set(reqRef, { time: Date.now() });
       addBtn.textContent = "Sent";
       addBtn.disabled = true;
@@ -229,9 +221,7 @@ function loadRequests() {
 
   if (!currentUID) return;
 
-  if (requestsListenerRef) {
-    off(requestsListenerRef);
-  }
+  if (requestsListenerRef) off(requestsListenerRef);
 
   requestsListenerRef = ref(db, "friend_requests/" + currentUID);
 
@@ -245,7 +235,6 @@ function loadRequests() {
 
     snap.forEach(async child => {
       const fromUID = child.key;
-
       const userSnap = await get(ref(db, "users/" + fromUID));
       if (!userSnap.exists()) return;
 
