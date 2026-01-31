@@ -297,52 +297,62 @@ function loadRequests() {
 }
 
 /* ================= FRIENDS ================= */
-function loadFriends() {
-  friendsList.innerHTML = "";
+function loadRequests() {
+  requestList.innerHTML = "";
 
-  if (!currentUID) return;
+  if (requestsListenerRef) off(requestsListenerRef);
+  requestsListenerRef = ref(db, "friend_requests/" + currentUID);
 
-  if (friendsListenerRef) off(friendsListenerRef);
-
-  friendsListenerRef = ref(db, "friends/" + currentUID);
-
-  onValue(friendsListenerRef, async snap => {
-    friendsList.innerHTML = "";
+  onValue(requestsListenerRef, async snap => {
+    requestList.innerHTML = "";
 
     if (!snap.exists()) {
-      friendsList.innerHTML = `<p class="empty-text">No friends yet</p>`;
+      requestList.innerHTML = `<p class="empty-text">No requests</p>`;
       return;
     }
 
-    for (const friendUID of Object.keys(snap.val())) {
-      const userSnap = await get(ref(db, "users/" + friendUID));
-      if (!userSnap.exists()) continue;
+    for (const fromUID of Object.keys(snap.val())) {
+      const uSnap = await get(ref(db, "users/" + fromUID));
+      if (!uSnap.exists()) continue;
 
       const row = document.createElement("div");
       row.className = "list-item";
 
       const name = document.createElement("span");
-      name.textContent = "@" + userSnap.val().username;
+      name.textContent = "@" + uSnap.val().username;
 
-      name.onclick = () => openChat(friendUID, userSnap.val().username);
+      const accept = document.createElement("button");
+      accept.className = "primary-btn";
+      accept.textContent = "Accept";
 
-      const removeBtn = document.createElement("button");
-      removeBtn.className = "primary-btn";
-      removeBtn.textContent = "Remove";
+      const reject = document.createElement("button");
+      reject.className = "danger-btn";
+      reject.textContent = "Reject";
 
-      removeBtn.onclick = async () => {
-  await remove(ref(db, `friends/${currentUID}/${friendUID}`));
-  await remove(ref(db, `friends/${friendUID}/${currentUID}`));
+      accept.onclick = async () => {
+  // 1️⃣ Add friends on BOTH sides
+  await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+  await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
 
-  // 🔥 ALSO CLEAR REQUESTS
-  await remove(ref(db, `friend_requests/${currentUID}/${friendUID}`));
-  await remove(ref(db, `friend_requests/${friendUID}/${currentUID}`));
+  // 2️⃣ Remove requests on BOTH sides (🔥 THIS WAS MISSING)
+  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+  await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
+
+  // 3️⃣ Switch screen & refresh
+  showScreen("home");
+      loadFriends(); // 🔥 THIS WAS MISSING
 };
 
-      
+      reject.onclick = async () => {
+        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+      };
+
+    
+
       row.appendChild(name);
-      row.appendChild(removeBtn);
-      friendsList.appendChild(row);
+      row.appendChild(accept);
+      row.appendChild(reject);
+      requestList.appendChild(row);
     }
   });
 }
