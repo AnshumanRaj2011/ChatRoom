@@ -136,19 +136,28 @@ reject.textContent = "Reject";
   });
 }
 // ================= NAVIGATION =================
+// OPEN SEARCH
 document.getElementById("btn-search").onclick = () => {
   searchInput.value = "";
   searchResults.innerHTML = "";
   showScreen("search");
 };
 
+// BACK FROM SEARCH
 document.getElementById("btn-back-search").onclick = () => {
   showScreen("home");
 };
 
+// OPEN REQUESTS ✅
 document.getElementById("btn-requests").onclick = () => {
   showScreen("requests");
-  loadRequests(); 
+  loadRequests(); // 👈 ONLY HERE
+};
+
+// BACK FROM REQUESTS ✅
+document.getElementById("btn-back-requests").onclick = () => {
+  if (requestsListenerRef) off(requestsListenerRef);
+  showScreen("home");
 };
   /* ================= REQUESTS ================= */
 
