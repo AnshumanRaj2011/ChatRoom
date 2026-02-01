@@ -235,7 +235,7 @@ logoutBtn.onclick = async () => {
 };
 
 /* ================= SEARCH ================= */
-searchInput.addEventListener("input", async () => {
+searchInput.oninput = async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
