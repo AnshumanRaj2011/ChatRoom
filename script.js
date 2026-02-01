@@ -176,7 +176,7 @@ searchInput.addEventListener("input", async () => {
     if (!username.startsWith(query)) return;
 
     console.log(`Match found for: ${username} (UID: ${uid})`);
-    found = true;
+    
     count++;
     const row = document.createElement("div");
     row.className = "list-item";
@@ -202,6 +202,7 @@ searchInput.addEventListener("input", async () => {
       you.textContent = "You";
       row.appendChild(you);
       searchResults.appendChild(row);
+      found = true;
       return;
     }
 
