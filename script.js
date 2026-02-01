@@ -172,7 +172,7 @@ searchInput.addEventListener("input", async () => {
     const uid = child.val();
 
     if (!username.toLowerCase().startsWith(query)) return;
-    found = true;
+    
 
     promises.push((async () => {
       try {
@@ -209,6 +209,7 @@ searchInput.addEventListener("input", async () => {
           you.textContent = "You";
           row.appendChild(you);
           searchResults.appendChild(row);
+          found = true;
           return;
         }
 
@@ -236,6 +237,7 @@ searchInput.addEventListener("input", async () => {
 
         row.appendChild(addBtn);
         searchResults.appendChild(row);
+        found = true;
       } catch (error) {
         console.error(`Error processing user ${username}:`, error);
       }
