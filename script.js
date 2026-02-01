@@ -168,8 +168,8 @@ searchInput.addEventListener("input", async () => {
 
   for (const username of Object.keys(usernames)) {
     const uid = usernames[username];
-
     const cleanUsername = username.toLowerCase();
+
     if (!cleanUsername.includes(query)) continue;
 
     found = true;
@@ -183,10 +183,7 @@ searchInput.addEventListener("input", async () => {
     const userSnap = await get(ref(db, "users/" + uid));
     const user = userSnap.val() || {};
 
-    if (user.badge) {
-      name.appendChild(createBadge(user.badge));
-    }
-
+    if (user.badge) name.appendChild(createBadge(user.badge));
     row.appendChild(name);
 
     if (uid === currentUID) {
@@ -212,9 +209,7 @@ searchInput.addEventListener("input", async () => {
     } else {
       btn.textContent = "Add";
       btn.onclick = async () => {
-        await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-          time: Date.now()
-        });
+        await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
         btn.textContent = "Sent";
         btn.disabled = true;
       };
@@ -228,29 +223,6 @@ searchInput.addEventListener("input", async () => {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
   }
 });
-
-    /* ---------- NAME + BADGE ---------- */
-    const name = document.createElement("span");
-    name.textContent = "@" + username;
-
-    const userSnap = await get(ref(db, "users/" + uid));
-    const user = userSnap.val() || {};
-
-    if (user.badge) {
-      name.appendChild(createBadge(user.badge));
-    }
-
-    row.appendChild(name);
-
-    /* ---------- SELF ---------- */
-    if (uid === currentUID) {
-      const you = document.createElement("span");
-      you.textContent = "You";
-      row.appendChild(you);
-      searchResults.appendChild(row);
-      continue;
-    }
-
     /* ---------- ADD / SENT / FRIENDS ---------- */
     const btn = document.createElement("button");
     btn.className = "primary-btn";
