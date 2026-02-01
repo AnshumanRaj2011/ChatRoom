@@ -1,6 +1,5 @@
 // script.js - Updated JavaScript for ChatRoom App
-// Debug Fix: Added try-catch and console.log in search to identify why other usernames don't show.
-// If userSnap fails or data is missing, it logs the issue. Also, ensured self always shows if data exists.
+// Includes auto-repair for missing profiles, broader search matching, and debug logs.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
@@ -95,7 +94,6 @@ onAuthStateChanged(auth, async user => {
   }
 
   currentUID = user.uid;
-
   const userRef = ref(db, "users/" + currentUID);
   const snap = await get(userRef);
 
@@ -104,6 +102,7 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
+  currentUserRole = snap.val().role || "user";
   showScreen("home");
   loadFriends();
 });
@@ -133,7 +132,7 @@ saveUsernameBtn.onclick = async () => {
   }
 
   await set(ref(db, "usernames/" + username), currentUID);
-  await update(ref(db, "users/" + currentUID), { username, role: "user" }); // Default role
+  await update(ref(db, "users/" + currentUID), { username, role: "user" });
 
   showScreen("home");
   loadFriends();
@@ -178,7 +177,6 @@ searchInput.addEventListener("input", async () => {
         const row = document.createElement("div");
         row.className = "list-item";
 
-        /* ---------- NAME + BADGE ---------- */
         const name = document.createElement("span");
         name.textContent = "@" + username;
 
@@ -187,14 +185,9 @@ searchInput.addEventListener("input", async () => {
 
         console.log(`Searching for ${username} (UID: ${uid}): userSnap.exists=${userSnap.exists()}, user.username=${user.username}`);
 
-        // Skip if user data is invalid or missing for non-self
         if (!userSnap.exists()) {
-  console.warn(`Repairing missing user profile for ${username}`);
-
-  await update(ref(db, "users/" + uid), {
-    username,
-    role: "user"
-  });
+          console.warn(`Repairing missing user profile for ${username}`);
+          await update(ref(db, "users/" + uid), { username, role: "user" });
         }
 
         const badge = createBadge(user.badge);
@@ -202,7 +195,6 @@ searchInput.addEventListener("input", async () => {
 
         row.appendChild(name);
 
-        /* ---------- SELF ---------- */
         if (uid === currentUID) {
           const you = document.createElement("span");
           you.textContent = "You";
@@ -212,7 +204,6 @@ searchInput.addEventListener("input", async () => {
           return;
         }
 
-        /* ---------- ADD / SENT / FRIENDS ---------- */
         const addBtn = document.createElement("button");
         addBtn.className = "primary-btn";
 
@@ -239,6 +230,7 @@ searchInput.addEventListener("input", async () => {
         found = true;
       } catch (error) {
         console.error(`Error processing user ${username}:`, error);
+        alert("Search error: " + error.message);
       }
     })());
   });
@@ -278,12 +270,11 @@ function loadFriends() {
         const badge = createBadge(user.badge);
         if (badge) name.appendChild(badge);
 
-        // Remove button
         const removeBtn = document.createElement("button");
         removeBtn.className = "danger-btn";
         removeBtn.textContent = "Remove";
         removeBtn.onclick = async (e) => {
-          e.stopPropagation(); // Prevent opening chat
+          e.stopPropagation();
           await remove(ref(db, `friends/${currentUID}/${friendUID}`));
           await remove(ref(db, `friends/${friendUID}/${currentUID}`));
         };
@@ -337,14 +328,10 @@ function loadRequests() {
         reject.textContent = "Reject";
 
         accept.onclick = async () => {
-          // Add friends both sides
           await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
           await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-
-          // Remove request both sides
           await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
           await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
-
           showScreen("home");
           loadFriends();
         };
@@ -368,7 +355,6 @@ async function openChat(friendUID) {
   currentChatUID = friendUID;
   chatMessages.innerHTML = "";
 
-  // Build chat header safely
   chatUsername.innerHTML = "";
 
   const userSnap = await get(ref(db, "users/" + friendUID));
@@ -385,7 +371,6 @@ async function openChat(friendUID) {
 
   const chatId = currentUID < friendUID ? currentUID + "_" + friendUID : friendUID + "_" + currentUID;
 
-  // Set members (optional, for tracking)
   await set(ref(db, `chats/${chatId}/members/${currentUID}`), true);
   await set(ref(db, `chats/${chatId}/members/${friendUID}`), true);
 
@@ -402,7 +387,6 @@ async function openChat(friendUID) {
       div.className = "chat-message " + (data.from === currentUID ? "me" : "other");
       div.textContent = data.text;
 
-      // GOD delete
       if (currentUserRole === "god") {
         const del = document.createElement("span");
         del.textContent = " ❌";
@@ -435,31 +419,26 @@ chatForm.onsubmit = async e => {
 };
 
 /* ================= NAVIGATION ================= */
-// OPEN SEARCH
 document.getElementById("btn-search").onclick = () => {
   searchInput.value = "";
   searchResults.innerHTML = "";
   showScreen("search");
 };
 
-// BACK FROM SEARCH
 document.getElementById("btn-back-search").onclick = () => {
   showScreen("home");
 };
 
-// OPEN REQUESTS
 document.getElementById("btn-requests").onclick = () => {
   showScreen("requests");
   loadRequests();
 };
 
-// BACK FROM REQUESTS
 document.getElementById("btn-back-requests").onclick = () => {
   if (requestsListenerRef) off(requestsListenerRef);
   showScreen("home");
 };
 
-// BACK FROM CHAT
 document.getElementById("btn-back-chat").onclick = () => {
   if (chatListenerRef) off(chatListenerRef);
   currentChatUID = null;
