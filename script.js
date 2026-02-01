@@ -171,8 +171,7 @@ searchInput.addEventListener("input", async () => {
     const username = child.key;
     const uid = child.val();
 
-    if (!username.toLowerCase().startsWith(query)) return;
-    
+    if (!username.toLowerCase().includes(query)) return;
 
     promises.push((async () => {
       try {
