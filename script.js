@@ -92,6 +92,12 @@ googleLoginBtn.onclick = () => {
 };
 
 /* ================= AUTH ================= */
+// 🔥 HANDLE REDIRECT FIRST
+await getRedirectResult(auth).catch(err => {
+  console.error("Redirect error:", err);
+});
+
+// 🔥 THEN LISTEN FOR AUTH STATE
 onAuthStateChanged(auth, async user => {
   if (!user) {
     currentUID = null;
@@ -103,11 +109,10 @@ onAuthStateChanged(auth, async user => {
   const snap = await get(ref(db, "users/" + currentUID));
 
   if (snap.exists()) {
-  currentUserRole = snap.val().role || "user";
-  showScreen("home");
-  loadFriends();
-  }
-  else {
+    currentUserRole = snap.val().role || "user";
+    showScreen("home");
+    loadFriends();
+  } else {
     showScreen("username");
   }
 });
