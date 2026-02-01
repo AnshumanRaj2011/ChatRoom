@@ -245,85 +245,32 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
-  const usernamesSnap = await get(ref(db, "usernames"));
+  const snap = await get(ref(db, "usernames"));
 
-  if (!usernamesSnap.exists()) {
+  if (!snap.exists()) {
     searchResults.innerHTML =
-      "<p class='empty-text'>No users yet</p>";
+      "<p class='empty-text'>No users in database</p>";
     return;
   }
 
-  const usernames = usernamesSnap.val();
+  const usernames = snap.val();
   let found = false;
 
-  // ✅ LOOP SAFELY
-  for (const username in usernames) {
-    const uid = usernames[username];
+  for (const key in usernames) {
+    const username = key.toLowerCase();   // 🔥 IMPORTANT
+    const uid = usernames[key];
 
-    if (!username.toLowerCase().startsWith(query)) continue;
+    if (!username.includes(query)) continue;
 
     found = true;
 
-    const row = document.createElement("div");
-    row.className = "list-item";
+    const div = document.createElement("div");
+    div.className = "list-item";
+    div.textContent = "@" + key;
 
-    const name = document.createElement("span");
-    name.textContent = "@" + username;
-
-    // 🔹 Get user data
-    const userSnap = await get(ref(db, "users/" + uid));
-    const user = userSnap.exists() ? userSnap.val() : {};
-
-    if (user.badge) {
-      const badge = document.createElement("span");
-      badge.className = "badge " + user.badge;
-      badge.textContent = user.badge.toUpperCase();
-      name.appendChild(badge);
-    }
-
-    row.appendChild(name);
-
-    // 👤 SELF
-    if (uid === currentUID) {
-      const you = document.createElement("span");
-      you.textContent = "You";
-      row.appendChild(you);
-      searchResults.appendChild(row);
-      continue;
-    }
-
-    // 🔍 CHECK FRIEND / REQUEST STATUS
-    const [friendSnap, reqToThem, reqFromThem] = await Promise.all([
-      get(ref(db, `friends/${currentUID}/${uid}`)),
-      get(ref(db, `friend_requests/${uid}/${currentUID}`)),
-      get(ref(db, `friend_requests/${currentUID}/${uid}`))
-    ]);
-
-    const btn = document.createElement("button");
-    btn.className = "primary-btn";
-
-    if (friendSnap.exists()) {
-      btn.textContent = "Friends";
-      btn.disabled = true;
-    } else if (reqToThem.exists() || reqFromThem.exists()) {
-      btn.textContent = "Sent";
-      btn.disabled = true;
-    } else {
-      btn.textContent = "Add";
-      btn.onclick = async () => {
-        await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-          time: Date.now()
-        });
-        btn.textContent = "Sent";
-        btn.disabled = true;
-      };
-    }
-
-    row.appendChild(btn);
-    searchResults.appendChild(row);
+    searchResults.appendChild(div);
   }
 
-  // ✅ GUARANTEED NO MATCH MESSAGE
   if (!found) {
     searchResults.innerHTML =
       "<p class='empty-text'>No match found</p>";
