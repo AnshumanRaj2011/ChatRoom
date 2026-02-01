@@ -242,71 +242,80 @@ logoutBtn.onclick = async () => {
 };
 
 /* ================= SEARCH ================= */
-for (const key in usernames) {
-  const username = key.toLowerCase();
-  const uid = usernames[key];
+/* ================= SEARCH ================= */
+searchInput.addEventListener("input", async () => {
+  const query = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
 
-  if (!username.includes(query)) continue;
-  found = true;
-
-  const row = document.createElement("div");
-  row.className = "list-item";
-
-  // 🔹 USERNAME
-  // 🔹 NAME
-const name = document.createElement("span");
-name.textContent = "@" + key;
-
-// 🔥 ADD THIS
-const userSnap = await get(ref(db, "users/" + uid));
-const user = userSnap.val() || {};
-
-const badge = createBadge(user.badge);
-if (badge) name.appendChild(badge);
-
-row.appendChild(name);
-
-  // 🔹 ADD / SENT / FRIENDS BUTTON
-  if (uid !== currentUID) {
-    const add = document.createElement("button");
-    add.className = "primary-btn";
-
-    const friendSnap = await get(
-      ref(db, `friends/${currentUID}/${uid}`)
-    );
-    const req1 = await get(
-      ref(db, `friend_requests/${uid}/${currentUID}`)
-    );
-    const req2 = await get(
-      ref(db, `friend_requests/${currentUID}/${uid}`)
-    );
-
-    const requestExists = req1.exists() || req2.exists();
-
-    if (friendSnap.exists()) {
-      add.textContent = "Friends";
-      add.disabled = true;
-    } else if (requestExists) {
-      add.textContent = "Sent";
-      add.disabled = true;
-    } else {
-      add.textContent = "Add";
-      add.onclick = async () => {
-        await set(
-          ref(db, `friend_requests/${uid}/${currentUID}`),
-          true
-        );
-        add.textContent = "Sent";
-        add.disabled = true;
-      };
-    }
-
-    row.appendChild(add);
+  if (!query) {
+    searchResults.innerHTML =
+      "<p class='empty-text'>Type a username</p>";
+    return;
   }
 
-  searchResults.appendChild(row);
-}
-  
+  const snap = await get(ref(db, "usernames"));
+  if (!snap.exists()) {
+    searchResults.innerHTML =
+      "<p class='empty-text'>No users in database</p>";
+    return;
+  }
+
+  const usernames = snap.val();
+  let found = false;
+
+  for (const key in usernames) {
+    const username = key.toLowerCase();
+    const uid = usernames[key];
+
+    if (!username.includes(query)) continue;
+    found = true;
+
+    const row = document.createElement("div");
+    row.className = "list-item";
+
+    // 🔹 NAME
+    const name = document.createElement("span");
+    name.textContent = "@" + key;
+
+    // 🔹 BADGE
+    const userSnap = await get(ref(db, "users/" + uid));
+    const user = userSnap.val() || {};
+    const badge = createBadge(user.badge);
+    if (badge) name.appendChild(badge);
+
+    row.appendChild(name);
+
+    // 🔹 ADD / SENT / FRIENDS
+    if (uid !== currentUID) {
+      const add = document.createElement("button");
+      add.className = "primary-btn";
+
+      const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
+      const req1 = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
+      const req2 = await get(ref(db, `friend_requests/${currentUID}/${uid}`));
+
+      const requestExists = req1.exists() || req2.exists();
+
+      if (friendSnap.exists()) {
+        add.textContent = "Friends";
+        add.disabled = true;
+      } else if (requestExists) {
+        add.textContent = "Sent";
+        add.disabled = true;
+      } else {
+        add.textContent = "Add";
+        add.onclick = async () => {
+          await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+          add.textContent = "Sent";
+          add.disabled = true;
+        };
+      }
+
+      row.appendChild(add);
+    }
+
+    searchResults.appendChild(row);
+  }
 
   if (!found) {
     searchResults.innerHTML =
@@ -358,7 +367,9 @@ async function openChat(friendUID, username) {
   set(ref(db, `chats/${chatId}/members/${currentUID}`), true);
   set(ref(db, `chats/${chatId}/members/${friendUID}`), true);
 
+  if (chatListenerRef) off(chatListenerRef);
   chatListenerRef = ref(db, `chats/${chatId}/messages`);
+
   onValue(chatListenerRef, snap => {
     chatMessages.innerHTML = "";
     if (!snap.exists()) return;
@@ -366,17 +377,23 @@ async function openChat(friendUID, username) {
     snap.forEach(msg => {
       const data = msg.val();
       const div = document.createElement("div");
+      div.className =
+        "chat-message " + (data.from === currentUID ? "me" : "other");
       div.textContent = data.text;
 
+      // ❌ GOD delete
       if (currentUserRole === "god") {
         const del = document.createElement("span");
         del.textContent = " ❌";
+        del.style.cursor = "pointer";
         del.onclick = () => remove(msg.ref);
         div.appendChild(del);
       }
 
       chatMessages.appendChild(div);
     });
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   });
 }
 
