@@ -258,13 +258,17 @@ searchInput.addEventListener("input", async () => {
     row.appendChild(name);
 
     if (uid !== currentUID) {
-      const add = document.createElement("button");
-      add.textContent = "Add";
-      add.onclick = async () => {
-        await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
-        add.disabled = true;
-      };
-      row.appendChild(add);
+  const add = document.createElement("button");
+  add.className = "primary-btn";
+  add.textContent = "Add";
+
+  add.onclick = async () => {
+    await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+    add.textContent = "Sent";
+    add.disabled = true;
+  };
+
+  row.appendChild(add);
     }
 
     searchResults.appendChild(row);
