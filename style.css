@@ -216,13 +216,15 @@ button {
   background: #9c27b0;
 }
 
-/* ADMIN */
-.badge.admin {
-  background: #ff9800;
+/* GOD */
+.badge.god {
+  background: linear-gradient(45deg, #ff9800, #ff5722);
   font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
 }
 
-/* 👑 Crown before ADMIN */
-.badge.admin::before {
-  content: "👑 ";
+/* 🔱 Crown before GOD */
+.badge.god::before {
+  content: "🔱 ";
 }
