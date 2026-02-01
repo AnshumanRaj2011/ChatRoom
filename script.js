@@ -157,7 +157,6 @@ btnBackChat.onclick = () => {
   showScreen("home");
 };
 
-
 function createBadge(badgeType) {
   if (!badgeType) return null;
 
@@ -168,6 +167,7 @@ function createBadge(badgeType) {
   badge.textContent = badgeType.toUpperCase();
   return badge;
 }
+
 
 /* ================= SEARCH ================= */
 searchInput.addEventListener("input", async () => {
@@ -187,55 +187,57 @@ searchInput.addEventListener("input", async () => {
 
   let found = false;
 
-  usernamesSnap.forEach(async child => {
-  const username = child.key;
-  const uid = child.val();
+  usernamesSnap.forEach(child => {
+    const username = child.key;
+    const uid = child.val();
 
-  if (!username.startsWith(query)) return;
+    if (!username.startsWith(query)) return;
 
-  found = true;
+    found = true;
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-  const row = document.createElement("div");
-  row.className = "list-item";
+    // SELF
+    if (uid === currentUID) {
+      row.innerHTML = `<span>@${username}</span><span>You</span>`;
+      searchResults.appendChild(row);
+      return;
+    }
 
-  /* ===== NAME + BADGE ===== */
-  const name = document.createElement("span");
-  name.textContent = "@" + username;
+    // ADD FRIEND
+    const addBtn = document.createElement("button");
+    addBtn.className = "primary-btn";
+    addBtn.textContent = "Add";
 
-  const userSnap = await get(ref(db, "users/" + uid));
-  const user = userSnap.val() || {};
+    addBtn.onclick = async () => {
+      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+        time: Date.now()
+      });
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    };
 
-  if (user.badge) {
-    name.appendChild(createBadge(user.badge));
-  }
-
-  row.appendChild(name);
-
-  /* ===== SELF ===== */
-  if (uid === currentUID) {
-    const you = document.createElement("span");
-    you.textContent = "You";
-    row.appendChild(you);
+    row.innerHTML = `<span>@${username}</span>`;
+    row.appendChild(addBtn);
     searchResults.appendChild(row);
-    return;
+  });
+
+const name = document.createElement("span");
+name.textContent = "@" + cleanUsername;
+
+if (user.badge) {
+  name.appendChild(createBadge(user.badge));
+}
+
+row.appendChild(name);
+
+  
+
+  if (!found) {
+    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
   }
-
-  /* ===== ADD FRIEND BUTTON ===== */
-  const addBtn = document.createElement("button");
-  addBtn.className = "primary-btn";
-  addBtn.textContent = "Add";
-
-  addBtn.onclick = async () => {
-    await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-      time: Date.now()
-    });
-    addBtn.textContent = "Sent";
-    addBtn.disabled = true;
-  };
-
-  row.appendChild(addBtn);
-  searchResults.appendChild(row);
 });
+
 /* ================= REQUESTS ================= */
 function loadRequests() {
   requestList.innerHTML = "";
