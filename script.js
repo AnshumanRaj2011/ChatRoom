@@ -159,11 +159,7 @@ document.getElementById("btn-back-requests").onclick = () => {
   if (requestsListenerRef) off(requestsListenerRef);
   showScreen("home");
 };
-  /* ================= REQUESTS ================= */
 
-document.getElementById("btn-back-requests").onclick = () => {
-  showScreen("home");
-};
 
 document.getElementById("btn-back-chat").onclick = () => {
   if (chatListenerRef) off(chatListenerRef);
@@ -274,24 +270,34 @@ searchInput.addEventListener("input", async () => {
   add.className = "primary-btn";
 
   // 🔍 CHECK: already friends?
-  const friendSnap = await get(
-    ref(db, `friends/${currentUID}/${uid}`)
-  );
+const friendSnap = await get(
+  ref(db, `friends/${currentUID}/${uid}`)
+);
 
-  // 🔍 CHECK: request already sent?
-  const reqSnap = await get(
-    ref(db, `friend_requests/${uid}/${currentUID}`)
-  );
+// 🔍 CHECK: request already sent (BOTH directions)
+const reqSnap1 = await get(
+  ref(db, `friend_requests/${uid}/${currentUID}`)
+);
 
-  if (friendSnap.exists()) {
+const reqSnap2 = await get(
+  ref(db, `friend_requests/${currentUID}/${uid}`)
+);
+
+// ✅ DEFINE requestExists (THIS WAS MISSING)
+const requestExists = reqSnap1.exists() || reqSnap2.exists();
+
+if (friendSnap.exists()) {
+  // ✅ ALREADY FRIENDS
   add.textContent = "Friends";
   add.disabled = true;
 }
 else if (requestExists) {
+  // ⏳ REQUEST SENT OR RECEIVED
   add.textContent = "Sent";
   add.disabled = true;
 }
 else {
+  // ➕ CAN SEND REQUEST
   add.textContent = "Add";
   add.onclick = async () => {
     await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
@@ -300,7 +306,7 @@ else {
   };
 }
 
-  row.appendChild(add);
+row.appendChild(add);
     }
 
     searchResults.appendChild(row);
