@@ -1,6 +1,6 @@
 // script.js - Updated JavaScript for ChatRoom App
-// Changes: Added "Remove" button in friends list with stopPropagation to prevent chat opening.
-// Search already handles "Add", "Sent", and "Friends" states correctly.
+// Fix: Added check in search for non-self users to skip if user data is missing or invalid (e.g., no username).
+// This prevents showing "@undefined" or empty rows, ensuring only valid users appear in search results.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
@@ -182,6 +182,9 @@ searchInput.addEventListener("input", async () => {
 
       const userSnap = await get(ref(db, "users/" + uid));
       const user = userSnap.val() || {};
+
+      // Skip if user data is invalid or missing
+      if (!user.username) return;
 
       const badge = createBadge(user.badge);
       if (badge) name.appendChild(badge);
