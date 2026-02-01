@@ -372,15 +372,13 @@ function openChat(friendUID, username) {
       div.textContent = data.text;
 
 if (currentUserRole === "admin") {
-  chatUsername.textContent = "@" + username + " 👑" + "ADMIN";
   const del = document.createElement("span");
   del.textContent = " ❌";
   del.style.cursor = "pointer";
   del.style.marginLeft = "6px";
   del.onclick = () => remove(msg.ref);
   div.appendChild(del);
-}
-      chatMessages.appendChild(div);
+}      chatMessages.appendChild(div);
     });
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
