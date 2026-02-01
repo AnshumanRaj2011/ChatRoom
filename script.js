@@ -104,10 +104,12 @@ function loadRequests() {
       }
 
       const accept = document.createElement("button");
-      accept.textContent = "Accept";
+accept.className = "primary-btn";
+accept.textContent = "Accept";
 
-      const reject = document.createElement("button");
-      reject.textContent = "Reject";
+const reject = document.createElement("button");
+reject.className = "danger-btn";
+reject.textContent = "Reject";
 
       accept.onclick = async () => {
         // Add friends both sides
