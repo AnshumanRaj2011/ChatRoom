@@ -73,6 +73,7 @@ const chatInput = document.getElementById("chat-input");
 const btnBackChat = document.getElementById("btn-back-chat");
 
 /* ================= STATE ================= */
+let currentUserRole = "user";
 let currentUID = null;
 let friendsListenerRef = null;
 let requestsListenerRef = null;
@@ -101,9 +102,11 @@ onAuthStateChanged(auth, async user => {
   const snap = await get(ref(db, "users/" + currentUID));
 
   if (snap.exists()) {
-    showScreen("home");
-    loadFriends();
-  } else {
+  currentUserRole = snap.val().role || "user";
+  showScreen("home");
+  loadFriends();
+  }
+  else {
     showScreen("username");
   }
 });
