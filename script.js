@@ -157,84 +157,77 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
-  const usernamesSnap = await get(ref(db, "usernames"));
-  if (!usernamesSnap.exists()) {
+  const snap = await get(ref(db, "usernames"));
+  if (!snap.exists()) {
     searchResults.innerHTML = `<p class="empty-text">No users yet</p>`;
     return;
   }
 
-  const promises = [];
-  let count = 0;
+  const usernames = snap.val();
+  let found = false;
 
-  usernamesSnap.forEach(child => {
-    if (count >= 10) return;
-    const username = child.key;
-    const uid = child.val();
+  // ✅ NORMAL for...of LOOP (await SAFE)
+  for (const username of Object.keys(usernames)) {
+    const uid = usernames[username];
 
-    console.log(`Checking username: ${username}, query: ${query}, startsWith: ${username.startsWith(query)}`);
+    if (!username.toLowerCase().includes(query)) continue;
 
-    if (!username.startsWith(query)) return;
+    found = true;
 
-    console.log(`Match found for: ${username} (UID: ${uid})`);
-    count++;
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-    promises.push((async () => {
-      const row = document.createElement("div");
-      row.className = "list-item";
+    /* ---------- NAME + BADGE ---------- */
+    const name = document.createElement("span");
+    name.textContent = "@" + username;
 
-      const name = document.createElement("span");
-      name.textContent = "@" + username;
+    const userSnap = await get(ref(db, "users/" + uid));
+    const user = userSnap.val() || {};
 
-      // Auto-repair if missing
-      const userSnap = await get(ref(db, "users/" + uid));
-      const user = userSnap.val() || {};
-      if (!userSnap.exists()) {
-        console.warn(`Repairing missing user profile for ${username}`);
-        await update(ref(db, "users/" + uid), { username, role: "user" });
-      }
+    if (user.badge) {
+      name.appendChild(createBadge(user.badge));
+    }
 
-      const badge = createBadge(user.badge);
-      if (badge) name.appendChild(badge);
+    row.appendChild(name);
 
-      row.appendChild(name);
-
-      if (uid === currentUID) {
-        const you = document.createElement("span");
-        you.textContent = "You";
-        row.appendChild(you);
-        searchResults.appendChild(row);
-        return;
-      }
-
-      const addBtn = document.createElement("button");
-      addBtn.className = "primary-btn";
-
-      const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
-      const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
-
-      if (friendSnap.exists()) {
-        addBtn.textContent = "Friends";
-        addBtn.disabled = true;
-      } else if (reqSnap.exists()) {
-        addBtn.textContent = "Sent";
-        addBtn.disabled = true;
-      } else {
-        addBtn.textContent = "Add";
-        addBtn.onclick = async () => {
-          await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
-          addBtn.textContent = "Sent";
-          addBtn.disabled = true;
-        };
-      }
-
-      row.appendChild(addBtn);
+    /* ---------- SELF ---------- */
+    if (uid === currentUID) {
+      const you = document.createElement("span");
+      you.textContent = "You";
+      row.appendChild(you);
       searchResults.appendChild(row);
-    })());
-  });
+      continue;
+    }
 
-  await Promise.all(promises);
+    /* ---------- ADD / SENT / FRIENDS ---------- */
+    const btn = document.createElement("button");
+    btn.className = "primary-btn";
 
-  if (promises.length === 0) {
+    const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
+    const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
+
+    if (friendSnap.exists()) {
+      btn.textContent = "Friends";
+      btn.disabled = true;
+    } else if (reqSnap.exists()) {
+      btn.textContent = "Sent";
+      btn.disabled = true;
+    } else {
+      btn.textContent = "Add";
+      btn.onclick = async () => {
+        await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+          time: Date.now()
+        });
+        btn.textContent = "Sent";
+        btn.disabled = true;
+      };
+    }
+
+    row.appendChild(btn);
+    searchResults.appendChild(row);
+  }
+
+  if (!found) {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
   }
 });
