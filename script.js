@@ -262,13 +262,36 @@ searchInput.addEventListener("input", async () => {
     if (uid !== currentUID) {
   const add = document.createElement("button");
   add.className = "primary-btn";
-  add.textContent = "Add";
 
-  add.onclick = async () => {
-    await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+  // 🔍 CHECK: already friends?
+  const friendSnap = await get(
+    ref(db, `friends/${currentUID}/${uid}`)
+  );
+
+  // 🔍 CHECK: request already sent?
+  const reqSnap = await get(
+    ref(db, `friend_requests/${uid}/${currentUID}`)
+  );
+
+  if (friendSnap.exists()) {
+    // ✅ ALREADY FRIENDS
+    add.textContent = "Friends";
+    add.disabled = true;
+  } 
+  else if (reqSnap.exists()) {
+    // ⏳ REQUEST ALREADY SENT
     add.textContent = "Sent";
     add.disabled = true;
-  };
+  } 
+  else {
+    // ➕ CAN SEND REQUEST
+    add.textContent = "Add";
+    add.onclick = async () => {
+      await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+      add.textContent = "Sent";
+      add.disabled = true;
+    };
+  }
 
   row.appendChild(add);
     }
