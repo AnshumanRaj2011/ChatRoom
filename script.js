@@ -148,7 +148,6 @@ logoutBtn.onclick = async () => {
 };
 
 /* ================= SEARCH ================= */
-// Fixed: Synchronous like your working version, with auto-repair and badges.
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
@@ -172,8 +171,11 @@ searchInput.addEventListener("input", async () => {
     const username = child.key;
     const uid = child.val();
 
+    console.log(`Checking username: ${username}, query: ${query}, startsWith: ${username.startsWith(query)}`);
+
     if (!username.startsWith(query)) return;
 
+    console.log(`Match found for: ${username} (UID: ${uid})`);
     found = true;
     count++;
     const row = document.createElement("div");
