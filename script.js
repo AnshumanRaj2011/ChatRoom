@@ -80,9 +80,73 @@ document.getElementById("btn-back-search").onclick = () => {
 
 document.getElementById("btn-requests").onclick = () => {
   showScreen("requests");
-  loadRequests();
-};
+  /* ================= REQUESTS ================= */
+function loadRequests() {
+  requestList.innerHTML = "";
 
+  // Remove old listener if any
+  if (requestsListenerRef) off(requestsListenerRef);
+
+  // Listen to incoming requests
+  requestsListenerRef = ref(db, "friend_requests/" + currentUID);
+
+  onValue(requestsListenerRef, async snap => {
+    requestList.innerHTML = "";
+
+    if (!snap.exists()) {
+      requestList.innerHTML = "<p class='empty-text'>No requests</p>";
+      return;
+    }
+
+    for (const fromUID of Object.keys(snap.val())) {
+      const userSnap = await get(ref(db, "users/" + fromUID));
+      if (!userSnap.exists()) continue;
+
+      const user = userSnap.val();
+
+      const row = document.createElement("div");
+      row.className = "list-item";
+
+      const name = document.createElement("span");
+      name.textContent = "@" + user.username;
+
+      // Badge (optional)
+      if (user.badge) {
+        const badge = document.createElement("span");
+        badge.className = "badge " + user.badge;
+        badge.textContent = user.badge.toUpperCase();
+        name.appendChild(badge);
+      }
+
+      const accept = document.createElement("button");
+      accept.textContent = "Accept";
+
+      const reject = document.createElement("button");
+      reject.textContent = "Reject";
+
+      accept.onclick = async () => {
+        // Add friends both sides
+        await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+        await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+
+        // Remove request
+        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+
+        showScreen("home");
+        loadFriends();
+      };
+
+      reject.onclick = async () => {
+        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+      };
+
+      row.appendChild(name);
+      row.appendChild(accept);
+      row.appendChild(reject);
+      requestList.appendChild(row);
+    }
+  });
+}
 document.getElementById("btn-back-requests").onclick = () => {
   showScreen("home");
 };
