@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-
 import {
   getDatabase,
   ref,
@@ -179,41 +178,56 @@ searchInput.addEventListener("input", async () => {
 
   let found = false;
 
-  usernamesSnap.forEach(child => {
-    const username = child.key;
-    const uid = child.val();
+  usernamesSnap.forEach(async child => {
+  const username = child.key;
+  const uid = child.val();
 
-    if (!username.startsWith(query)) return;
+  if (!username.startsWith(query)) return;
 
-    found = true;
-    const row = document.createElement("div");
-    row.className = "list-item";
+  const userSnap = await get(ref(db, "users/" + uid));
+  const userData = userSnap.exists() ? userSnap.val() : {};
 
-    // SELF
-    if (uid === currentUID) {
-      row.innerHTML = `<span>@${username}</span><span>You</span>`;
-      searchResults.appendChild(row);
-      return;
-    }
+  const row = document.createElement("div");
+  row.className = "list-item";
 
-    // ADD FRIEND
-    const addBtn = document.createElement("button");
-    addBtn.className = "primary-btn";
-    addBtn.textContent = "Add";
+  const name = document.createElement("span");
+  name.textContent = "@" + username;
 
-    addBtn.onclick = async () => {
-      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-        time: Date.now()
-      });
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    };
+  // ✅ ADD BADGE (VIP / VERIFIED / GOD)
+  if (userData.badge && userData.badge !== "none") {
+    const badge = document.createElement("span");
+    badge.className = "badge " + userData.badge;
+    badge.textContent = userData.badge.toUpperCase();
+    name.appendChild(badge);
+  }
 
-    row.innerHTML = `<span>@${username}</span>`;
-    row.appendChild(addBtn);
+  // SELF
+  if (uid === currentUID) {
+    row.appendChild(name);
+    const you = document.createElement("span");
+    you.textContent = "You";
+    row.appendChild(you);
     searchResults.appendChild(row);
-  });
+    return;
+  }
 
+  // ADD FRIEND BUTTON
+  const addBtn = document.createElement("button");
+  addBtn.className = "primary-btn";
+  addBtn.textContent = "Add";
+
+  addBtn.onclick = async () => {
+    await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+      time: Date.now()
+    });
+    addBtn.textContent = "Sent";
+    addBtn.disabled = true;
+  };
+
+  row.appendChild(name);
+  row.appendChild(addBtn);
+  searchResults.appendChild(row);
+});
   if (!found) {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
   }
@@ -385,8 +399,8 @@ async function openChat(friendUID, username) {
         "chat-message " + (data.from === currentUID ? "me" : "other");
       div.textContent = data.text;
 
-      // ❌ Delete only if *I* am admin
-      if (currentUserRole === "admin") {
+      // ❌ Delete only if *I* am god
+      if (currentUserRole === "god") {
         const del = document.createElement("span");
         del.textContent = " ❌";
         del.style.cursor = "pointer";
