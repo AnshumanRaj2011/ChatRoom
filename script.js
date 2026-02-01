@@ -93,8 +93,9 @@ googleLoginBtn.onclick = () => {
 
 /* ================= AUTH ================= */
 // 🔥 HANDLE REDIRECT FIRST
-await getRedirectResult(auth).catch(err => {
-  console.error("Redirect error:", err);
+getRedirectResult(auth).catch(err => {
+  console.error("Login error:", err);
+  alert(err.message);
 });
 
 // 🔥 THEN LISTEN FOR AUTH STATE
@@ -137,7 +138,7 @@ saveUsernameBtn.onclick = async () => {
   }
 
   await set(nameRef, currentUID);
-  await set(ref(db, "users/" + currentUID), { username });
+  await update(ref(db, "users/" + currentUID), { username });
 
   showScreen("home");
   loadFriends();
