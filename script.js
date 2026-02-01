@@ -253,18 +253,18 @@ for (const key in usernames) {
   row.className = "list-item";
 
   // 🔹 USERNAME
-  const name = document.createElement("span");
-  name.textContent = "@" + key;
+  // 🔹 NAME
+const name = document.createElement("span");
+name.textContent = "@" + key;
 
-  // 🔹 FETCH USER DATA (FOR BADGE)
-  const userSnap = await get(ref(db, "users/" + uid));
-  const user = userSnap.val() || {};
+// 🔥 ADD THIS
+const userSnap = await get(ref(db, "users/" + uid));
+const user = userSnap.val() || {};
 
-  // 🔹 ADD BADGE
-  const badge = createBadge(user.badge);
-  if (badge) name.appendChild(badge);
+const badge = createBadge(user.badge);
+if (badge) name.appendChild(badge);
 
-  row.appendChild(name);
+row.appendChild(name);
 
   // 🔹 ADD / SENT / FRIENDS BUTTON
   if (uid !== currentUID) {
