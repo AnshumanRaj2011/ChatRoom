@@ -1,10 +1,5 @@
-// script.js - ChatRoom App with Badges Added
-// Based on your provided code, added badge support according to CSS and HTML.
-// Badges: verified (green), vip (purple), god (gradient with crown).
-// Fetches user data for badges in search, friends, requests, and chat header.
-// Added role check for god in chat for message deletion.
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+
 import {
   getDatabase,
   ref,
@@ -15,6 +10,7 @@ import {
   remove,
   off
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
 import {
   getAuth,
   GoogleAuthProvider,
@@ -22,6 +18,7 @@ import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -46,9 +43,8 @@ const screens = {
   home: document.getElementById("screen-home"),
   search: document.getElementById("screen-search"),
   requests: document.getElementById("screen-requests"),
-  chat: document.getElementById("screen-chat")
+  chat: document.getElementById("screen-chat") // ✅ REQUIRED
 };
-
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove("active"));
   screens[name].classList.add("active");
@@ -69,7 +65,6 @@ const btnBackRequests = document.getElementById("btn-back-requests");
 const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
 const requestList = document.getElementById("request-list");
-
 /* ================= CHAT DOM ================= */
 const chatUsername = document.getElementById("chat-username");
 const chatMessages = document.getElementById("chat-messages");
@@ -77,23 +72,12 @@ const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const btnBackChat = document.getElementById("btn-back-chat");
 
-/* ================= UTILITY ================= */
-function createBadge(badgeType) {
-  if (!badgeType) return null;
-  const badge = document.createElement("span");
-  badge.className = "badge " + badgeType;
-  badge.textContent = badgeType.toUpperCase();
-  if (badgeType === "god") {
-    badge.innerHTML = "🔱 " + badge.textContent; // Add crown emoji for god
-  }
-  return badge;
-}
-
 /* ================= STATE ================= */
 let currentUID = null;
-let currentUserRole = "user"; // Added for god role
 let friendsListenerRef = null;
 let requestsListenerRef = null;
+
+/* 🔥 CHAT STATE (ADD, DO NOT REPLACE) */
 let currentChatUID = null;
 let chatListenerRef = null;
 
@@ -102,11 +86,7 @@ showScreen("login");
 
 /* ================= LOGIN ================= */
 googleLoginBtn.onclick = async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    alert("Login failed: " + e.message);
-  }
+  await signInWithPopup(auth, provider);
 };
 
 /* ================= AUTH ================= */
@@ -121,7 +101,6 @@ onAuthStateChanged(auth, async user => {
   const snap = await get(ref(db, "users/" + currentUID));
 
   if (snap.exists()) {
-    currentUserRole = snap.val().role || "user"; // Set role
     showScreen("home");
     loadFriends();
   } else {
@@ -144,7 +123,7 @@ saveUsernameBtn.onclick = async () => {
   }
 
   await set(nameRef, currentUID);
-  await set(ref(db, "users/" + currentUID), { username, role: "user" }); // Default role
+  await set(ref(db, "users/" + currentUID), { username });
 
   showScreen("home");
   loadFriends();
@@ -154,7 +133,6 @@ saveUsernameBtn.onclick = async () => {
 logoutBtn.onclick = async () => {
   if (friendsListenerRef) off(friendsListenerRef);
   if (requestsListenerRef) off(requestsListenerRef);
-  if (chatListenerRef) off(chatListenerRef);
   await signOut(auth);
   showScreen("login");
 };
@@ -180,7 +158,6 @@ btnBackChat.onclick = () => {
 };
 
 /* ================= SEARCH ================= */
-// Made async to fetch user data for badges
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
@@ -197,7 +174,6 @@ searchInput.addEventListener("input", async () => {
   }
 
   let found = false;
-  const promises = [];
 
   usernamesSnap.forEach(child => {
     const username = child.key;
@@ -205,50 +181,34 @@ searchInput.addEventListener("input", async () => {
 
     if (!username.startsWith(query)) return;
 
-    promises.push((async () => {
-      found = true;
-      const row = document.createElement("div");
-      row.className = "list-item";
+    found = true;
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-      const name = document.createElement("span");
-      name.textContent = "@" + username;
-
-      // Fetch user data for badge
-      const userSnap = await get(ref(db, "users/" + uid));
-      const user = userSnap.val() || {};
-      const badge = createBadge(user.badge);
-      if (badge) name.appendChild(badge);
-
-      row.appendChild(name);
-
-      // SELF
-      if (uid === currentUID) {
-        const you = document.createElement("span");
-        you.textContent = "You";
-        row.appendChild(you);
-        searchResults.appendChild(row);
-        return;
-      }
-
-      // ADD FRIEND
-      const addBtn = document.createElement("button");
-      addBtn.className = "primary-btn";
-      addBtn.textContent = "Add";
-
-      addBtn.onclick = async () => {
-        await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-          time: Date.now()
-        });
-        addBtn.textContent = "Sent";
-        addBtn.disabled = true;
-      };
-
-      row.appendChild(addBtn);
+    // SELF
+    if (uid === currentUID) {
+      row.innerHTML = `<span>@${username}</span><span>You</span>`;
       searchResults.appendChild(row);
-    })());
-  });
+      return;
+    }
 
-  await Promise.all(promises);
+    // ADD FRIEND
+    const addBtn = document.createElement("button");
+    addBtn.className = "primary-btn";
+    addBtn.textContent = "Add";
+
+    addBtn.onclick = async () => {
+      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+        time: Date.now()
+      });
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    };
+
+    row.innerHTML = `<span>@${username}</span>`;
+    row.appendChild(addBtn);
+    searchResults.appendChild(row);
+  });
 
   if (!found) {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
@@ -274,16 +234,11 @@ function loadRequests() {
       const uSnap = await get(ref(db, "users/" + fromUID));
       if (!uSnap.exists()) continue;
 
-      const user = uSnap.val();
       const row = document.createElement("div");
       row.className = "list-item";
 
       const name = document.createElement("span");
-      name.textContent = "@" + user.username;
-
-      // Badge
-      const badge = createBadge(user.badge);
-      if (badge) name.appendChild(badge);
+      name.textContent = "@" + uSnap.val().username;
 
       const accept = document.createElement("button");
       accept.className = "primary-btn";
@@ -294,17 +249,24 @@ function loadRequests() {
       reject.textContent = "Reject";
 
       accept.onclick = async () => {
-        await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
-        await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
-        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-        await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
-        showScreen("home");
-        loadFriends();
-      };
+  // 1️⃣ Add friends on BOTH sides
+  await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+  await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+
+  // 2️⃣ Remove requests on BOTH sides (🔥 THIS WAS MISSING)
+  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+  await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
+
+  // 3️⃣ Switch screen & refresh
+  showScreen("home");
+  loadFriends();
+};
 
       reject.onclick = async () => {
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
       };
+
+    
 
       row.appendChild(name);
       row.appendChild(accept);
@@ -336,19 +298,14 @@ function loadFriends() {
       const userSnap = await get(ref(db, "users/" + friendUID));
       if (!userSnap.exists()) continue;
 
-      const user = userSnap.val();
       const row = document.createElement("div");
       row.className = "list-item";
 
       const name = document.createElement("span");
-      name.textContent = "@" + user.username;
-
-      // Badge
-      const badge = createBadge(user.badge);
-      if (badge) name.appendChild(badge);
+      name.textContent = "@" + userSnap.val().username;
 
       const removeBtn = document.createElement("button");
-      removeBtn.className = "danger-btn"; // Fixed to danger-btn
+      removeBtn.className = "primary-btn";
       removeBtn.textContent = "Remove";
 
       removeBtn.onclick = async () => {
@@ -356,7 +313,7 @@ function loadFriends() {
         await remove(ref(db, `friends/${friendUID}/${currentUID}`));
       };
 
-      row.onclick = () => openChat(friendUID, user.username);
+      row.onclick = () => openChat(friendUID, userSnap.val().username);
 
       row.appendChild(name);
       row.appendChild(removeBtn);
@@ -365,28 +322,19 @@ function loadFriends() {
   });
 }
 
-/* ================= CHAT ================= */
 function openChat(friendUID, username) {
   currentChatUID = friendUID;
-  chatUsername.innerHTML = ""; // Clear for badge
-
-  // Build header with badge
-  const name = document.createElement("span");
-  name.textContent = "@" + username;
-
-  // Fetch user data for badge
-  get(ref(db, "users/" + friendUID)).then(userSnap => {
-    const user = userSnap.val() || {};
-    const badge = createBadge(user.badge);
-    if (badge) name.appendChild(badge);
-    chatUsername.appendChild(name);
-  });
-
+  chatUsername.textContent = "@" + username;
   chatMessages.innerHTML = "";
+
   showScreen("chat");
 
-  const chatId = currentUID < friendUID ? currentUID + "_" + friendUID : friendUID + "_" + currentUID;
+  const chatId =
+    currentUID < friendUID
+      ? currentUID + "_" + friendUID
+      : friendUID + "_" + currentUID;
 
+  // ✅ CREATE CHAT MEMBERS (REQUIRED FOR FIREBASE RULES)
   set(ref(db, "chats/" + chatId + "/members/" + currentUID), true);
   set(ref(db, "chats/" + chatId + "/members/" + friendUID), true);
 
@@ -401,18 +349,9 @@ function openChat(friendUID, username) {
     snap.forEach(msg => {
       const data = msg.val();
       const div = document.createElement("div");
-      div.className = "chat-message " + (data.from === currentUID ? "me" : "other");
+      div.className =
+        "chat-message " + (data.from === currentUID ? "me" : "other");
       div.textContent = data.text;
-
-      // GOD delete
-      if (currentUserRole === "god") {
-        const del = document.createElement("span");
-        del.textContent = " ❌";
-        del.style.cursor = "pointer";
-        del.onclick = () => remove(msg.ref);
-        div.appendChild(del);
-      }
-
       chatMessages.appendChild(div);
     });
 
@@ -420,13 +359,16 @@ function openChat(friendUID, username) {
   });
 }
 
-/* ================= SEND MESSAGE ================= */
+// ================= SEND MESSAGE =================
 chatForm.onsubmit = async e => {
   e.preventDefault();
 
   if (!chatInput.value.trim() || !currentChatUID) return;
 
-  const chatId = currentUID < currentChatUID ? currentUID + "_" + currentChatUID : currentChatUID + "_" + currentUID;
+  const chatId =
+    currentUID < currentChatUID
+      ? currentUID + "_" + currentChatUID
+      : currentChatUID + "_" + currentUID;
 
   await push(ref(db, "chats/" + chatId + "/messages"), {
     from: currentUID,
