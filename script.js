@@ -223,38 +223,6 @@ searchInput.addEventListener("input", async () => {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
   }
 });
-    /* ---------- ADD / SENT / FRIENDS ---------- */
-    const btn = document.createElement("button");
-    btn.className = "primary-btn";
-
-    const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
-    const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
-
-    if (friendSnap.exists()) {
-      btn.textContent = "Friends";
-      btn.disabled = true;
-    } else if (reqSnap.exists()) {
-      btn.textContent = "Sent";
-      btn.disabled = true;
-    } else {
-      btn.textContent = "Add";
-      btn.onclick = async () => {
-        await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-          time: Date.now()
-        });
-        btn.textContent = "Sent";
-        btn.disabled = true;
-      };
-    }
-
-    row.appendChild(btn);
-    searchResults.appendChild(row);
-  }
-
-  if (!found) {
-    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
-  }
-});
 
 /* ================= FRIENDS ================= */
 function loadFriends() {
