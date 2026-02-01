@@ -13,11 +13,11 @@ import {
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
@@ -86,8 +86,8 @@ let chatListenerRef = null;
 showScreen("login");
 
 /* ================= LOGIN ================= */
-googleLoginBtn.onclick = async () => {
-  await signInWithPopup(auth, provider);
+googleLoginBtn.onclick = () => {
+  signInWithRedirect(auth, provider);
 };
 
 /* ================= AUTH ================= */
