@@ -95,15 +95,17 @@ onAuthStateChanged(auth, async user => {
   }
 
   currentUID = user.uid;
-  const snap = await get(ref(db, "users/" + currentUID));
 
-  if (snap.exists()) {
-    currentUserRole = snap.val().role || "user";
-    showScreen("home");
-    loadFriends();
-  } else {
+  const userRef = ref(db, "users/" + currentUID);
+  const snap = await get(userRef);
+
+  if (!snap.exists()) {
     showScreen("username");
+    return;
   }
+
+  showScreen("home");
+  loadFriends();
 });
 
 /* ================= LOGIN ================= */
@@ -187,9 +189,16 @@ searchInput.addEventListener("input", async () => {
         console.log(`Searching for ${username} (UID: ${uid}): userSnap.exists=${userSnap.exists()}, user.username=${user.username}`);
 
         // Skip if user data is invalid or missing for non-self
-        if (uid !== currentUID && (!userSnap.exists() || !user.username)) {
-          console.log(`Skipping ${username} due to missing/invalid data`);
-          return;
+        if (!userSnap.exists()) {
+  console.warn(`Auto-fixing missing user profile for ${username}`);
+
+  await set(ref(db, "users/" + uid), {
+    username,
+    role: "user",
+    createdAt: Date.now()
+  });
+
+  user.username = username;
         }
 
         const badge = createBadge(user.badge);
