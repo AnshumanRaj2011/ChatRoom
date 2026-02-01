@@ -163,10 +163,10 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
-  let found = false;
+  const promises = [];
   let count = 0;
 
-  usernamesSnap.forEach(async child => {
+  usernamesSnap.forEach(child => {
     if (count >= 10) return;
     const username = child.key;
     const uid = child.val();
@@ -176,67 +176,67 @@ searchInput.addEventListener("input", async () => {
     if (!username.startsWith(query)) return;
 
     console.log(`Match found for: ${username} (UID: ${uid})`);
-    
     count++;
-    const row = document.createElement("div");
-    row.className = "list-item";
 
-    const name = document.createElement("span");
-    name.textContent = "@" + username;
+    promises.push((async () => {
+      const row = document.createElement("div");
+      row.className = "list-item";
 
-    // Auto-repair if missing
-    const userSnap = await get(ref(db, "users/" + uid));
-    const user = userSnap.val() || {};
-    if (!userSnap.exists()) {
-      console.warn(`Repairing missing user profile for ${username}`);
-      await update(ref(db, "users/" + uid), { username, role: "user" });
-    }
+      const name = document.createElement("span");
+      name.textContent = "@" + username;
 
-    const badge = createBadge(user.badge);
-    if (badge) name.appendChild(badge);
+      // Auto-repair if missing
+      const userSnap = await get(ref(db, "users/" + uid));
+      const user = userSnap.val() || {};
+      if (!userSnap.exists()) {
+        console.warn(`Repairing missing user profile for ${username}`);
+        await update(ref(db, "users/" + uid), { username, role: "user" });
+      }
 
-    row.appendChild(name);
+      const badge = createBadge(user.badge);
+      if (badge) name.appendChild(badge);
 
-    if (uid === currentUID) {
-      const you = document.createElement("span");
-      you.textContent = "You";
-      row.appendChild(you);
-      searchResults.appendChild(row);
-      found = true;
-      return;
-    }
+      row.appendChild(name);
 
-    const addBtn = document.createElement("button");
-    addBtn.className = "primary-btn";
+      if (uid === currentUID) {
+        const you = document.createElement("span");
+        you.textContent = "You";
+        row.appendChild(you);
+        searchResults.appendChild(row);
+        return;
+      }
 
-    const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
-    const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
+      const addBtn = document.createElement("button");
+      addBtn.className = "primary-btn";
 
-    if (friendSnap.exists()) {
-      addBtn.textContent = "Friends";
-      addBtn.disabled = true;
-    } else if (reqSnap.exists()) {
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    } else {
-      addBtn.textContent = "Add";
-      addBtn.onclick = async () => {
-        await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
+      const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
+      const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
+
+      if (friendSnap.exists()) {
+        addBtn.textContent = "Friends";
+        addBtn.disabled = true;
+      } else if (reqSnap.exists()) {
         addBtn.textContent = "Sent";
         addBtn.disabled = true;
-      };
-    }
+      } else {
+        addBtn.textContent = "Add";
+        addBtn.onclick = async () => {
+          await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
+          addBtn.textContent = "Sent";
+          addBtn.disabled = true;
+        };
+      }
 
-    row.appendChild(addBtn);
-    searchResults.appendChild(row);
+      row.appendChild(addBtn);
+      searchResults.appendChild(row);
+    })());
   });
 
-  // Small delay to ensure async operations complete
-  setTimeout(() => {
-    if (!found) {
-      searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
-    }
-  }, 100);
+  await Promise.all(promises);
+
+  if (promises.length === 0) {
+    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+  }
 });
 
 /* ================= FRIENDS ================= */
