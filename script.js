@@ -340,12 +340,28 @@ if (userSnap.val().badge && userSnap.val().badge !== "none") {
   });
 }
 
-function openChat(friendUID, username) {
+async function openChat(friendUID, username) {
   currentChatUID = friendUID;
-  chatUsername.textContent = "@" + username;
   chatMessages.innerHTML = "";
 
   showScreen("chat");
+
+  // 🔥 Get friend's data
+  const friendSnap = await get(ref(db, "users/" + friendUID));
+  const friendRole = friendSnap.exists() ? friendSnap.val().role : "user";
+
+  // Default: show friend's name
+  chatUsername.textContent = "@" + username;
+
+  // 👑 If FRIEND is admin, show crown to ME
+  if (friendRole === "admin") {
+    const adminBadge = document.createElement("span");
+    adminBadge.textContent = " 👑 ADMIN";
+    adminBadge.style.color = "#ff9800";
+    adminBadge.style.fontSize = "12px";
+    adminBadge.style.marginLeft = "6px";
+    chatUsername.appendChild(adminBadge);
+  }
 
   const chatId =
     currentUID < friendUID
