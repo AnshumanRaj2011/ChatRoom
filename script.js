@@ -66,7 +66,7 @@ const chatMessages = document.getElementById("chat-messages");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 
-nction loadRequests() {
+function loadRequests() {
   requestList.innerHTML = "";
 
   // Remove old listener if any
@@ -145,8 +145,10 @@ document.getElementById("btn-back-search").onclick = () => {
 
 document.getElementById("btn-requests").onclick = () => {
   showScreen("requests");
+  loadRequests(); 
+};
   /* ================= REQUESTS ================= */
-fu
+
 document.getElementById("btn-back-requests").onclick = () => {
   showScreen("home");
 };
