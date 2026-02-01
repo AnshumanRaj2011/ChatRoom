@@ -66,6 +66,33 @@ const chatMessages = document.getElementById("chat-messages");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 
+
+// ================= NAVIGATION =================
+document.getElementById("btn-search").onclick = () => {
+  searchInput.value = "";
+  searchResults.innerHTML = "";
+  showScreen("search");
+};
+
+document.getElementById("btn-back-search").onclick = () => {
+  showScreen("home");
+};
+
+document.getElementById("btn-requests").onclick = () => {
+  showScreen("requests");
+  loadRequests();
+};
+
+document.getElementById("btn-back-requests").onclick = () => {
+  showScreen("home");
+};
+
+document.getElementById("btn-back-chat").onclick = () => {
+  if (chatListenerRef) off(chatListenerRef);
+  currentChatUID = null;
+  showScreen("home");
+};
+
 /* ================= STATE ================= */
 let currentUID = null;
 let currentUserRole = "user";
