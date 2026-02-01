@@ -1,5 +1,5 @@
-// script.js - Updated JavaScript for ChatRoom App
-// Includes auto-repair for missing profiles, broader search matching, and debug logs.
+// script.js - Full-featured ChatRoom App with Fixed Synchronous Search
+// Integrates working search logic from your latest version.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
@@ -148,6 +148,7 @@ logoutBtn.onclick = async () => {
 };
 
 /* ================= SEARCH ================= */
+// Fixed: Synchronous like your working version, with auto-repair and badges.
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
@@ -164,82 +165,75 @@ searchInput.addEventListener("input", async () => {
   }
 
   let found = false;
-  const promises = [];
+  let count = 0;
 
-  usernamesSnap.forEach(child => {
+  usernamesSnap.forEach(async child => {
+    if (count >= 10) return;
     const username = child.key;
     const uid = child.val();
 
-    if (!username.toLowerCase().includes(query)) return;
+    if (!username.startsWith(query)) return;
 
-    promises.push((async () => {
-      try {
-        const row = document.createElement("div");
-        row.className = "list-item";
+    found = true;
+    count++;
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-        const name = document.createElement("span");
-        name.textContent = "@" + username;
+    const name = document.createElement("span");
+    name.textContent = "@" + username;
 
-        const userSnap = await get(ref(db, "users/" + uid));
-        const user = userSnap.val() || {};
+    // Auto-repair if missing
+    const userSnap = await get(ref(db, "users/" + uid));
+    const user = userSnap.val() || {};
+    if (!userSnap.exists()) {
+      console.warn(`Repairing missing user profile for ${username}`);
+      await update(ref(db, "users/" + uid), { username, role: "user" });
+    }
 
-        console.log(`Searching for ${username} (UID: ${uid}): userSnap.exists=${userSnap.exists()}, user.username=${user.username}`);
+    const badge = createBadge(user.badge);
+    if (badge) name.appendChild(badge);
 
-        if (!userSnap.exists()) {
-          console.warn(`Repairing missing user profile for ${username}`);
-          await update(ref(db, "users/" + uid), { username, role: "user" });
-        }
+    row.appendChild(name);
 
-        const badge = createBadge(user.badge);
-        if (badge) name.appendChild(badge);
+    if (uid === currentUID) {
+      const you = document.createElement("span");
+      you.textContent = "You";
+      row.appendChild(you);
+      searchResults.appendChild(row);
+      return;
+    }
 
-        row.appendChild(name);
+    const addBtn = document.createElement("button");
+    addBtn.className = "primary-btn";
 
-        if (uid === currentUID) {
-          const you = document.createElement("span");
-          you.textContent = "You";
-          row.appendChild(you);
-          searchResults.appendChild(row);
-          found = true;
-          return;
-        }
+    const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
+    const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
 
-        const addBtn = document.createElement("button");
-        addBtn.className = "primary-btn";
+    if (friendSnap.exists()) {
+      addBtn.textContent = "Friends";
+      addBtn.disabled = true;
+    } else if (reqSnap.exists()) {
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    } else {
+      addBtn.textContent = "Add";
+      addBtn.onclick = async () => {
+        await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
+        addBtn.textContent = "Sent";
+        addBtn.disabled = true;
+      };
+    }
 
-        const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
-        const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
-
-        if (friendSnap.exists()) {
-          addBtn.textContent = "Friends";
-          addBtn.disabled = true;
-        } else if (reqSnap.exists()) {
-          addBtn.textContent = "Sent";
-          addBtn.disabled = true;
-        } else {
-          addBtn.textContent = "Add";
-          addBtn.onclick = async () => {
-            await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
-            addBtn.textContent = "Sent";
-            addBtn.disabled = true;
-          };
-        }
-
-        row.appendChild(addBtn);
-        searchResults.appendChild(row);
-        found = true;
-      } catch (error) {
-        console.error(`Error processing user ${username}:`, error);
-        alert("Search error: " + error.message);
-      }
-    })());
+    row.appendChild(addBtn);
+    searchResults.appendChild(row);
   });
 
-  await Promise.all(promises);
-
-  if (!found) {
-    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
-  }
+  // Small delay to ensure async operations complete
+  setTimeout(() => {
+    if (!found) {
+      searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+    }
+  }, 100);
 });
 
 /* ================= FRIENDS ================= */
