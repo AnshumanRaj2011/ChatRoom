@@ -238,7 +238,14 @@ function loadRequests() {
       row.className = "list-item";
 
       const name = document.createElement("span");
-      name.textContent = "@" + uSnap.val().username;
+name.textContent = "@" + uSnap.val().username;
+
+if (uSnap.val().badge && uSnap.val().badge !== "none") {
+  const badge = document.createElement("span");
+  badge.className = "badge " + uSnap.val().badge;
+  badge.textContent = uSnap.val().badge.toUpperCase();
+  name.appendChild(badge);
+}
 
       const accept = document.createElement("button");
       accept.className = "primary-btn";
@@ -302,7 +309,14 @@ function loadFriends() {
       row.className = "list-item";
 
       const name = document.createElement("span");
-      name.textContent = "@" + userSnap.val().username;
+name.textContent = "@" + userSnap.val().username;
+
+if (userSnap.val().badge && userSnap.val().badge !== "none") {
+  const badge = document.createElement("span");
+  badge.className = "badge " + userSnap.val().badge;
+  badge.textContent = userSnap.val().badge.toUpperCase();
+  name.appendChild(badge);
+}
 
       const removeBtn = document.createElement("button");
       removeBtn.className = "primary-btn";
