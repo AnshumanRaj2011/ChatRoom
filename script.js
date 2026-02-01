@@ -157,6 +157,18 @@ btnBackChat.onclick = () => {
   showScreen("home");
 };
 
+
+function createBadge(badgeType) {
+  if (!badgeType) return null;
+
+  const badge = document.createElement("span");
+  badge.classList.add("badge", badgeType); 
+  // example: badge god → class="badge god"
+
+  badge.textContent = badgeType.toUpperCase();
+  return badge;
+}
+
 /* ================= SEARCH ================= */
 searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
@@ -175,46 +187,55 @@ searchInput.addEventListener("input", async () => {
 
   let found = false;
 
-  usernamesSnap.forEach(child => {
-    const username = child.key;
-    const uid = child.val();
+  usernamesSnap.forEach(async child => {
+  const username = child.key;
+  const uid = child.val();
 
-    if (!username.startsWith(query)) return;
+  if (!username.startsWith(query)) return;
 
-    found = true;
-    const row = document.createElement("div");
-    row.className = "list-item";
+  found = true;
 
-    // SELF
-    if (uid === currentUID) {
-      row.innerHTML = `<span>@${username}</span><span>You</span>`;
-      searchResults.appendChild(row);
-      return;
-    }
+  const row = document.createElement("div");
+  row.className = "list-item";
 
-    // ADD FRIEND
-    const addBtn = document.createElement("button");
-    addBtn.className = "primary-btn";
-    addBtn.textContent = "Add";
+  /* ===== NAME + BADGE ===== */
+  const name = document.createElement("span");
+  name.textContent = "@" + username;
 
-    addBtn.onclick = async () => {
-      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-        time: Date.now()
-      });
-      addBtn.textContent = "Sent";
-      addBtn.disabled = true;
-    };
+  const userSnap = await get(ref(db, "users/" + uid));
+  const user = userSnap.val() || {};
 
-    row.innerHTML = `<span>@${username}</span>`;
-    row.appendChild(addBtn);
-    searchResults.appendChild(row);
-  });
-
-  if (!found) {
-    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+  if (user.badge) {
+    name.appendChild(createBadge(user.badge));
   }
-});
 
+  row.appendChild(name);
+
+  /* ===== SELF ===== */
+  if (uid === currentUID) {
+    const you = document.createElement("span");
+    you.textContent = "You";
+    row.appendChild(you);
+    searchResults.appendChild(row);
+    return;
+  }
+
+  /* ===== ADD FRIEND BUTTON ===== */
+  const addBtn = document.createElement("button");
+  addBtn.className = "primary-btn";
+  addBtn.textContent = "Add";
+
+  addBtn.onclick = async () => {
+    await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+      time: Date.now()
+    });
+    addBtn.textContent = "Sent";
+    addBtn.disabled = true;
+  };
+
+  row.appendChild(addBtn);
+  searchResults.appendChild(row);
+});
 /* ================= REQUESTS ================= */
 function loadRequests() {
   requestList.innerHTML = "";
