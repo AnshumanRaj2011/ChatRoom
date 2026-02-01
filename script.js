@@ -197,6 +197,15 @@ searchInput.addEventListener("input", async () => {
     const row = document.createElement("div");
     row.className = "list-item";
 
+    const name = document.createElement("span");
+name.textContent = "@" + cleanUsername;
+
+if (user.badge) {
+  name.appendChild(createBadge(user.badge));
+}
+
+row.appendChild(name);
+
     // SELF
     if (uid === currentUID) {
       row.innerHTML = `<span>@${username}</span><span>You</span>`;
@@ -222,16 +231,6 @@ searchInput.addEventListener("input", async () => {
     searchResults.appendChild(row);
   });
 
-const name = document.createElement("span");
-name.textContent = "@" + cleanUsername;
-
-if (user.badge) {
-  name.appendChild(createBadge(user.badge));
-}
-
-row.appendChild(name);
-
-  
 
   if (!found) {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
