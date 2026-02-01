@@ -93,9 +93,6 @@ googleLoginBtn.onclick = () => {
 };
 
 /* ================= AUTH ================= */
-
-
-// 🔥 THEN LISTEN FOR AUTH STATE
 onAuthStateChanged(auth, async user => {
   if (!user) {
     currentUID = null;
@@ -104,6 +101,7 @@ onAuthStateChanged(auth, async user => {
   }
 
   currentUID = user.uid;
+
   const snap = await get(ref(db, "users/" + currentUID));
 
   if (snap.exists()) {
@@ -134,12 +132,11 @@ saveUsernameBtn.onclick = async () => {
     return;
   }
 
-  await set(nameRef, currentUID);
-  await update(ref(db, "users/" + currentUID), { username });
+  await set(ref(db, "usernames/" + username), currentUID);
+await update(ref(db, "users/" + currentUID), { username });
 
-  showScreen("home");
-  loadFriends();
-};
+showScreen("home");
+loadFriends();
 
 /* ================= LOGOUT ================= */
 logoutBtn.onclick = async () => {
