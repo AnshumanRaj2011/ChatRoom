@@ -242,96 +242,71 @@ logoutBtn.onclick = async () => {
 };
 
 /* ================= SEARCH ================= */
-searchInput.addEventListener("input", async () => {
-  const query = searchInput.value.trim().toLowerCase();
-  searchResults.innerHTML = "";
+for (const key in usernames) {
+  const username = key.toLowerCase();
+  const uid = usernames[key];
 
-  if (!query) {
-    searchResults.innerHTML =
-      "<p class='empty-text'>Type a username</p>";
-    return;
-  }
+  if (!username.includes(query)) continue;
+  found = true;
 
-  const snap = await get(ref(db, "usernames"));
+  const row = document.createElement("div");
+  row.className = "list-item";
 
-  if (!snap.exists()) {
-    searchResults.innerHTML =
-      "<p class='empty-text'>No users in database</p>";
-    return;
-  }
+  // 🔹 USERNAME
+  const name = document.createElement("span");
+  name.textContent = "@" + key;
 
-  const usernames = snap.val();
-  let found = false;
+  // 🔹 FETCH USER DATA (FOR BADGE)
+  const userSnap = await get(ref(db, "users/" + uid));
+  const user = userSnap.val() || {};
 
-  for (const key in usernames) {
-    const username = key.toLowerCase();
-    const uid = usernames[key];
+  // 🔹 ADD BADGE
+  const badge = createBadge(user.badge);
+  if (badge) name.appendChild(badge);
 
-    if (!username.includes(query)) continue;
+  row.appendChild(name);
 
-    found = true;
+  // 🔹 ADD / SENT / FRIENDS BUTTON
+  if (uid !== currentUID) {
+    const add = document.createElement("button");
+    add.className = "primary-btn";
 
-    // 🔹 ROW
-    const row = document.createElement("div");
-    row.className = "list-item";
+    const friendSnap = await get(
+      ref(db, `friends/${currentUID}/${uid}`)
+    );
+    const req1 = await get(
+      ref(db, `friend_requests/${uid}/${currentUID}`)
+    );
+    const req2 = await get(
+      ref(db, `friend_requests/${currentUID}/${uid}`)
+    );
 
-    // 🔹 NAME
-    const name = document.createElement("span");
-name.textContent = "@" + key;
+    const requestExists = req1.exists() || req2.exists();
 
-// 🔥 GET USER DATA FOR BADGE
-const userSnap = await get(ref(db, "users/" + uid));
-const user = userSnap.val() || {};
-
-// 🔥 ADD BADGE
-const badge = createBadge(user.badge);
-if (badge) name.appendChild(badge);
-
-row.appendChild(name);
-
-    // 🔹 DO NOT SHOW ADD FOR SELF
-    if (uid !== currentUID) {
-      const add = document.createElement("button");
-      add.className = "primary-btn";
-
-      const friendSnap = await get(
-        ref(db, `friends/${currentUID}/${uid}`)
-      );
-
-      const req1 = await get(
-        ref(db, `friend_requests/${uid}/${currentUID}`)
-      );
-      const req2 = await get(
-        ref(db, `friend_requests/${currentUID}/${uid}`)
-      );
-
-      const requestExists = req1.exists() || req2.exists();
-
-      if (friendSnap.exists()) {
-        add.textContent = "Friends";
-        add.disabled = true;
-      }
-      else if (requestExists) {
+    if (friendSnap.exists()) {
+      add.textContent = "Friends";
+      add.disabled = true;
+    } else if (requestExists) {
+      add.textContent = "Sent";
+      add.disabled = true;
+    } else {
+      add.textContent = "Add";
+      add.onclick = async () => {
+        await set(
+          ref(db, `friend_requests/${uid}/${currentUID}`),
+          true
+        );
         add.textContent = "Sent";
         add.disabled = true;
-      }
-      else {
-        add.textContent = "Add";
-        add.onclick = async () => {
-          await set(
-            ref(db, `friend_requests/${uid}/${currentUID}`),
-            true
-          );
-          add.textContent = "Sent";
-          add.disabled = true;
-        };
-      }
-
-      row.appendChild(add);
+      };
     }
 
-    searchResults.appendChild(row);
+    row.appendChild(add);
   }
+
+  searchResults.appendChild(row);
+}
+  
 
   if (!found) {
     searchResults.innerHTML =
