@@ -1,6 +1,6 @@
-// script.js - Complete JavaScript for ChatRoom App using Firebase Realtime Database
-// This integrates with the provided HTML and CSS. Ensure Firebase config is correct.
-// Run on a local server (e.g., python -m http.server) for module imports.
+// script.js - Updated JavaScript for ChatRoom App
+// Changes: Added "Remove" button in friends list with stopPropagation to prevent chat opening.
+// Search already handles "Add", "Sent", and "Friends" states correctly.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
@@ -197,7 +197,7 @@ searchInput.addEventListener("input", async () => {
         return;
       }
 
-      /* ---------- ADD / SENT ---------- */
+      /* ---------- ADD / SENT / FRIENDS ---------- */
       const addBtn = document.createElement("button");
       addBtn.className = "primary-btn";
 
@@ -259,8 +259,19 @@ function loadFriends() {
         const badge = createBadge(user.badge);
         if (badge) name.appendChild(badge);
 
+        // Remove button
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "danger-btn";
+        removeBtn.textContent = "Remove";
+        removeBtn.onclick = async (e) => {
+          e.stopPropagation(); // Prevent opening chat
+          await remove(ref(db, `friends/${currentUID}/${friendUID}`));
+          await remove(ref(db, `friends/${friendUID}/${currentUID}`));
+        };
+
         row.onclick = () => openChat(friendUID);
         row.appendChild(name);
+        row.appendChild(removeBtn);
         friendsList.appendChild(row);
       })());
     }
