@@ -217,3 +217,11 @@ button {
 .badge.vip {
   background: #9c27b0;
 }
+.badge.admin {
+  background: #ff9800;   /* orange */
+  color: #fff;
+  font-weight: bold;
+}
+.badge.admin::before {
+  content: "👑 ";
+}
