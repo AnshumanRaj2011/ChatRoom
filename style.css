@@ -145,6 +145,13 @@ button {
   margin: 10px;
   max-width: calc(100% - 20px);
 }
+#screen-search {
+  overflow-y: auto;
+}
+
+#search-results {
+  min-height: 50px;
+}
 
 /* ===============================
    CHAT
