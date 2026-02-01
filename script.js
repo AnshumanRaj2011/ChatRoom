@@ -66,6 +66,17 @@ const chatMessages = document.getElementById("chat-messages");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 
+function createBadge(badgeType) {
+  if (!badgeType) return null;
+
+  const badge = document.createElement("span");
+  badge.className = "badge " + badgeType;
+  badge.textContent = badgeType.toUpperCase();
+
+  return badge;
+}
+
+
 function loadRequests() {
   requestList.innerHTML = "";
 
@@ -96,12 +107,8 @@ function loadRequests() {
       name.textContent = "@" + user.username;
 
       // Badge (optional)
-      if (user.badge) {
-        const badge = document.createElement("span");
-        badge.className = "badge " + user.badge;
-        badge.textContent = user.badge.toUpperCase();
-        name.appendChild(badge);
-      }
+      const badge = createBadge(user.badge);
+if (badge) name.appendChild(badge);
 
       const accept = document.createElement("button");
 accept.className = "primary-btn";
@@ -342,12 +349,8 @@ function loadFriends() {
       const name = document.createElement("span");
       name.textContent = "@" + user.username;
 
-      if (user.badge) {
-        const badge = document.createElement("span");
-        badge.className = "badge " + user.badge;
-        badge.textContent = user.badge.toUpperCase();
-        name.appendChild(badge);
-      }
+      const badge = createBadge(user.badge);
+if (badge) name.appendChild(badge);
 
       row.onclick = () => openChat(friendUID, user.username);
       row.appendChild(name);
