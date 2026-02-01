@@ -111,6 +111,11 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
+getRedirectResult(auth).catch(err => {
+  console.error("Login error:", err);
+  alert(err.message);
+});
+
 /* ================= USERNAME ================= */
 saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
