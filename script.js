@@ -170,6 +170,15 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
+  searchInput.addEventListener("input", async () => {
+  const query = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+
+  if (!query) {
+    searchResults.innerHTML = `<p class="empty-text">Type a username</p>`;
+    return;
+  }
+
   const usernamesSnap = await get(ref(db, "usernames"));
   if (!usernamesSnap.exists()) {
     searchResults.innerHTML = `<p class="empty-text">No users yet</p>`;
@@ -178,56 +187,59 @@ searchInput.addEventListener("input", async () => {
 
   let found = false;
 
-  usernamesSnap.forEach(async child => {
-  const username = child.key;
-  const uid = child.val();
+  for (const child of Object.entries(usernamesSnap.val())) {
+    const username = child[0];
+    const uid = child[1];
 
-  if (!username.startsWith(query)) return;
+    if (!username.startsWith(query)) continue;
 
-  const userSnap = await get(ref(db, "users/" + uid));
-  const userData = userSnap.exists() ? userSnap.val() : {};
+    found = true;
 
-  const row = document.createElement("div");
-  row.className = "list-item";
+    const userSnap = await get(ref(db, "users/" + uid));
+    const userData = userSnap.exists() ? userSnap.val() : {};
 
-  const name = document.createElement("span");
-  name.textContent = "@" + username;
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-  // ✅ ADD BADGE (VIP / VERIFIED / GOD)
-  if (userData.badge && userData.badge !== "none") {
-    const badge = document.createElement("span");
-    badge.className = "badge " + userData.badge;
-    badge.textContent = userData.badge.toUpperCase();
-    name.appendChild(badge);
-  }
+    const name = document.createElement("span");
+    name.textContent = "@" + username;
 
-  // SELF
-  if (uid === currentUID) {
+    // ✅ BADGE (GOD / VIP / VERIFIED)
+    if (userData.badge && userData.badge !== "none") {
+      const badge = document.createElement("span");
+      badge.className = "badge " + userData.badge;
+      badge.textContent = userData.badge.toUpperCase();
+      name.appendChild(badge);
+    }
+
+    // SELF
+    if (uid === currentUID) {
+      row.appendChild(name);
+      const you = document.createElement("span");
+      you.textContent = "You";
+      row.appendChild(you);
+      searchResults.appendChild(row);
+      continue;
+    }
+
+    // ADD FRIEND BUTTON
+    const addBtn = document.createElement("button");
+    addBtn.className = "primary-btn";
+    addBtn.textContent = "Add";
+
+    addBtn.onclick = async () => {
+      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+        time: Date.now()
+      });
+      addBtn.textContent = "Sent";
+      addBtn.disabled = true;
+    };
+
     row.appendChild(name);
-    const you = document.createElement("span");
-    you.textContent = "You";
-    row.appendChild(you);
+    row.appendChild(addBtn);
     searchResults.appendChild(row);
-    return;
   }
 
-  // ADD FRIEND BUTTON
-  const addBtn = document.createElement("button");
-  addBtn.className = "primary-btn";
-  addBtn.textContent = "Add";
-
-  addBtn.onclick = async () => {
-    await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-      time: Date.now()
-    });
-    addBtn.textContent = "Sent";
-    addBtn.disabled = true;
-  };
-
-  row.appendChild(name);
-  row.appendChild(addBtn);
-  searchResults.appendChild(row);
-});
   if (!found) {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
   }
