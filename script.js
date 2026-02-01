@@ -277,8 +277,17 @@ searchInput.addEventListener("input", async () => {
 
     // 🔹 NAME
     const name = document.createElement("span");
-    name.textContent = "@" + key;
-    row.appendChild(name);
+name.textContent = "@" + key;
+
+// 🔥 GET USER DATA FOR BADGE
+const userSnap = await get(ref(db, "users/" + uid));
+const user = userSnap.val() || {};
+
+// 🔥 ADD BADGE
+const badge = createBadge(user.badge);
+if (badge) name.appendChild(badge);
+
+row.appendChild(name);
 
     // 🔹 DO NOT SHOW ADD FOR SELF
     if (uid !== currentUID) {
