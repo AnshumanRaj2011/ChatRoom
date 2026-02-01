@@ -166,14 +166,7 @@ btnBackChat.onclick = () => {
 };
 
 /* ================= SEARCH ================= */
-searchInput.addEventListener("input", async () => {
-  const query = searchInput.value.trim().toLowerCase();
-  searchResults.innerHTML = "";
 
-  if (!query) {
-    searchResults.innerHTML = `<p class="empty-text">Type a username</p>`;
-    return;
-  }
 
   searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
