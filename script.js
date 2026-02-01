@@ -369,6 +369,15 @@ function openChat(friendUID, username) {
       div.className =
         "chat-message " + (data.from === currentUID ? "me" : "other");
       div.textContent = data.text;
+
+if (currentUserRole === "admin") {
+  const del = document.createElement("span");
+  del.textContent = " ❌";
+  del.style.cursor = "pointer";
+  del.style.marginLeft = "6px";
+  del.onclick = () => remove(msg.ref);
+  div.appendChild(del);
+}
       chatMessages.appendChild(div);
     });
 
