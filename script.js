@@ -257,18 +257,64 @@ searchInput.addEventListener("input", async () => {
   let found = false;
 
   for (const key in usernames) {
-    const username = key.toLowerCase();   // 🔥 IMPORTANT
+    const username = key.toLowerCase();
     const uid = usernames[key];
 
     if (!username.includes(query)) continue;
 
     found = true;
 
-    const div = document.createElement("div");
-    div.className = "list-item";
-    div.textContent = "@" + key;
+    // 🔹 ROW
+    const row = document.createElement("div");
+    row.className = "list-item";
 
-    searchResults.appendChild(div);
+    // 🔹 NAME
+    const name = document.createElement("span");
+    name.textContent = "@" + key;
+    row.appendChild(name);
+
+    // 🔹 DO NOT SHOW ADD FOR SELF
+    if (uid !== currentUID) {
+      const add = document.createElement("button");
+      add.className = "primary-btn";
+
+      const friendSnap = await get(
+        ref(db, `friends/${currentUID}/${uid}`)
+      );
+
+      const req1 = await get(
+        ref(db, `friend_requests/${uid}/${currentUID}`)
+      );
+      const req2 = await get(
+        ref(db, `friend_requests/${currentUID}/${uid}`)
+      );
+
+      const requestExists = req1.exists() || req2.exists();
+
+      if (friendSnap.exists()) {
+        add.textContent = "Friends";
+        add.disabled = true;
+      }
+      else if (requestExists) {
+        add.textContent = "Sent";
+        add.disabled = true;
+      }
+      else {
+        add.textContent = "Add";
+        add.onclick = async () => {
+          await set(
+            ref(db, `friend_requests/${uid}/${currentUID}`),
+            true
+          );
+          add.textContent = "Sent";
+          add.disabled = true;
+        };
+      }
+
+      row.appendChild(add);
+    }
+
+    searchResults.appendChild(row);
   }
 
   if (!found) {
