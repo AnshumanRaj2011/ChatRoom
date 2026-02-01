@@ -121,6 +121,7 @@ getRedirectResult(auth).catch(err => {
 /* ================= USERNAME ================= */
 saveUsernameBtn.onclick = async () => {
   const username = usernameInput.value.trim().toLowerCase();
+
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
     alert("Invalid username");
     return;
@@ -133,11 +134,11 @@ saveUsernameBtn.onclick = async () => {
   }
 
   await set(ref(db, "usernames/" + username), currentUID);
-await update(ref(db, "users/" + currentUID), { username });
+  await update(ref(db, "users/" + currentUID), { username });
 
-showScreen("home");
-loadFriends();
-
+  showScreen("home");
+  loadFriends();
+};
 /* ================= LOGOUT ================= */
 logoutBtn.onclick = async () => {
   if (friendsListenerRef) off(friendsListenerRef);
