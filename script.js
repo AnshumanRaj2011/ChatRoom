@@ -190,15 +190,12 @@ searchInput.addEventListener("input", async () => {
 
         // Skip if user data is invalid or missing for non-self
         if (!userSnap.exists()) {
-  console.warn(`Auto-fixing missing user profile for ${username}`);
+  console.warn(`Repairing missing user profile for ${username}`);
 
-  await set(ref(db, "users/" + uid), {
+  await update(ref(db, "users/" + uid), {
     username,
-    role: "user",
-    createdAt: Date.now()
+    role: "user"
   });
-
-  user.username = username;
         }
 
         const badge = createBadge(user.badge);
