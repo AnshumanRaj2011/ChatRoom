@@ -1,6 +1,6 @@
 // script.js - Updated JavaScript for ChatRoom App
-// Fix: Added check in search for non-self users to skip if user data is missing or invalid (e.g., no username).
-// This prevents showing "@undefined" or empty rows, ensuring only valid users appear in search results.
+// Debug Fix: Added try-catch and console.log in search to identify why other usernames don't show.
+// If userSnap fails or data is missing, it logs the issue. Also, ensured self always shows if data exists.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
@@ -173,57 +173,66 @@ searchInput.addEventListener("input", async () => {
     found = true;
 
     promises.push((async () => {
-      const row = document.createElement("div");
-      row.className = "list-item";
+      try {
+        const row = document.createElement("div");
+        row.className = "list-item";
 
-      /* ---------- NAME + BADGE ---------- */
-      const name = document.createElement("span");
-      name.textContent = "@" + username;
+        /* ---------- NAME + BADGE ---------- */
+        const name = document.createElement("span");
+        name.textContent = "@" + username;
 
-      const userSnap = await get(ref(db, "users/" + uid));
-      const user = userSnap.val() || {};
+        const userSnap = await get(ref(db, "users/" + uid));
+        const user = userSnap.val() || {};
 
-      // Skip if user data is invalid or missing
-      if (!user.username) return;
+        console.log(`Searching for ${username} (UID: ${uid}): userSnap.exists=${userSnap.exists()}, user.username=${user.username}`);
 
-      const badge = createBadge(user.badge);
-      if (badge) name.appendChild(badge);
+        // Skip if user data is invalid or missing for non-self
+        if (uid !== currentUID && (!userSnap.exists() || !user.username)) {
+          console.log(`Skipping ${username} due to missing/invalid data`);
+          return;
+        }
 
-      row.appendChild(name);
+        const badge = createBadge(user.badge);
+        if (badge) name.appendChild(badge);
 
-      /* ---------- SELF ---------- */
-      if (uid === currentUID) {
-        const you = document.createElement("span");
-        you.textContent = "You";
-        row.appendChild(you);
-        searchResults.appendChild(row);
-        return;
-      }
+        row.appendChild(name);
 
-      /* ---------- ADD / SENT / FRIENDS ---------- */
-      const addBtn = document.createElement("button");
-      addBtn.className = "primary-btn";
+        /* ---------- SELF ---------- */
+        if (uid === currentUID) {
+          const you = document.createElement("span");
+          you.textContent = "You";
+          row.appendChild(you);
+          searchResults.appendChild(row);
+          return;
+        }
 
-      const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
-      const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
+        /* ---------- ADD / SENT / FRIENDS ---------- */
+        const addBtn = document.createElement("button");
+        addBtn.className = "primary-btn";
 
-      if (friendSnap.exists()) {
-        addBtn.textContent = "Friends";
-        addBtn.disabled = true;
-      } else if (reqSnap.exists()) {
-        addBtn.textContent = "Sent";
-        addBtn.disabled = true;
-      } else {
-        addBtn.textContent = "Add";
-        addBtn.onclick = async () => {
-          await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
+        const reqSnap = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
+        const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
+
+        if (friendSnap.exists()) {
+          addBtn.textContent = "Friends";
+          addBtn.disabled = true;
+        } else if (reqSnap.exists()) {
           addBtn.textContent = "Sent";
           addBtn.disabled = true;
-        };
-      }
+        } else {
+          addBtn.textContent = "Add";
+          addBtn.onclick = async () => {
+            await set(ref(db, `friend_requests/${uid}/${currentUID}`), { time: Date.now() });
+            addBtn.textContent = "Sent";
+            addBtn.disabled = true;
+          };
+        }
 
-      row.appendChild(addBtn);
-      searchResults.appendChild(row);
+        row.appendChild(addBtn);
+        searchResults.appendChild(row);
+      } catch (error) {
+        console.error(`Error processing user ${username}:`, error);
+      }
     })());
   });
 
