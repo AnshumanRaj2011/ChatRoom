@@ -73,10 +73,11 @@ const chatInput = document.getElementById("chat-input");
 const btnBackChat = document.getElementById("btn-back-chat");
 
 /* ================= STATE ================= */
-let currentUserRole = "user";
+
 let currentUID = null;
 let friendsListenerRef = null;
 let requestsListenerRef = null;
+let currentUserRole = "user";
 
 /* 🔥 CHAT STATE (ADD, DO NOT REPLACE) */
 let currentChatUID = null;
