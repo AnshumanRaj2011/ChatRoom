@@ -239,13 +239,23 @@ searchInput.addEventListener("input", async () => {
   const query = searchInput.value.trim().toLowerCase();
   searchResults.innerHTML = "";
 
-  if (!query) return;
+  if (!query) {
+    searchResults.innerHTML = "<p class='empty-text'>Type a username</p>";
+    return;
+  }
 
   const usernamesSnap = await get(ref(db, "usernames"));
-  if (!usernamesSnap.exists()) return;
+  if (!usernamesSnap.exists()) {
+    searchResults.innerHTML = "<p class='empty-text'>No users yet</p>";
+    return;
+  }
+
+  let found = false; // 🔥 IMPORTANT
 
   for (const [username, uid] of Object.entries(usernamesSnap.val())) {
-    if (!username.startsWith(query)) continue;
+    if (!username.toLowerCase().startsWith(query)) continue;
+
+    found = true; // ✅ MATCH FOUND
 
     const userSnap = await get(ref(db, "users/" + uid));
     const user = userSnap.val() || {};
@@ -266,50 +276,40 @@ searchInput.addEventListener("input", async () => {
     row.appendChild(name);
 
     if (uid !== currentUID) {
-  const add = document.createElement("button");
-  add.className = "primary-btn";
+      const add = document.createElement("button");
+      add.className = "primary-btn";
 
-  // 🔍 CHECK: already friends?
-const friendSnap = await get(
-  ref(db, `friends/${currentUID}/${uid}`)
-);
+      const friendSnap = await get(ref(db, `friends/${currentUID}/${uid}`));
+      const req1 = await get(ref(db, `friend_requests/${uid}/${currentUID}`));
+      const req2 = await get(ref(db, `friend_requests/${currentUID}/${uid}`));
 
-// 🔍 CHECK: request already sent (BOTH directions)
-const reqSnap1 = await get(
-  ref(db, `friend_requests/${uid}/${currentUID}`)
-);
+      const requestExists = req1.exists() || req2.exists();
 
-const reqSnap2 = await get(
-  ref(db, `friend_requests/${currentUID}/${uid}`)
-);
+      if (friendSnap.exists()) {
+        add.textContent = "Friends";
+        add.disabled = true;
+      } else if (requestExists) {
+        add.textContent = "Sent";
+        add.disabled = true;
+      } else {
+        add.textContent = "Add";
+        add.onclick = async () => {
+          await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
+          add.textContent = "Sent";
+          add.disabled = true;
+        };
+      }
 
-// ✅ DEFINE requestExists (THIS WAS MISSING)
-const requestExists = reqSnap1.exists() || reqSnap2.exists();
-
-if (friendSnap.exists()) {
-  // ✅ ALREADY FRIENDS
-  add.textContent = "Friends";
-  add.disabled = true;
-}
-else if (requestExists) {
-  // ⏳ REQUEST SENT OR RECEIVED
-  add.textContent = "Sent";
-  add.disabled = true;
-}
-else {
-  // ➕ CAN SEND REQUEST
-  add.textContent = "Add";
-  add.onclick = async () => {
-    await set(ref(db, `friend_requests/${uid}/${currentUID}`), true);
-    add.textContent = "Sent";
-    add.disabled = true;
-  };
-}
-
-row.appendChild(add);
+      row.appendChild(add);
     }
 
     searchResults.appendChild(row);
+  }
+
+  // 🔥 SHOW MESSAGE IF NOTHING FOUND
+  if (!found) {
+    searchResults.innerHTML =
+      "<p class='empty-text'>No match found</p>";
   }
 });
 
