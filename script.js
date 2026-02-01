@@ -157,15 +157,19 @@ btnBackChat.onclick = () => {
   showScreen("home");
 };
 
-function createBadge(badgeType) {
-  if (!badgeType) return null;
+// 🔁 Universal username renderer with badge
+async function createUsernameNode(uid) {
+  const userSnap = await get(ref(db, "users/" + uid));
+  const user = userSnap.val();
 
-  const badge = document.createElement("span");
-  badge.classList.add("badge", badgeType); 
-  // example: badge god → class="badge god"
+  const name = document.createElement("span");
+  name.textContent = "@" + (user?.username || "unknown");
 
-  badge.textContent = badgeType.toUpperCase();
-  return badge;
+  if (user?.badge) {
+    name.appendChild(createBadge(user.badge));
+  }
+
+  return name;
 }
 
 
@@ -187,30 +191,28 @@ searchInput.addEventListener("input", async () => {
 
   let found = false;
 
-  usernamesSnap.forEach(child => {
-    const username = child.key;
-    const uid = child.val();
+  for (const child of Object.entries(usernamesSnap.val())) {
+    const username = child[0];
+    const uid = child[1];
 
-    if (!username.startsWith(query)) return;
+    if (!username.startsWith(query)) continue;
 
     found = true;
+
     const row = document.createElement("div");
     row.className = "list-item";
 
-    const name = document.createElement("span");
-name.textContent = "@" + cleanUsername;
-
-if (user.badge) {
-  name.appendChild(createBadge(user.badge));
-}
-
-row.appendChild(name);
+    // 👤 USERNAME + BADGE
+    const nameNode = await createUsernameNode(uid, username);
+    row.appendChild(nameNode);
 
     // SELF
     if (uid === currentUID) {
-      row.innerHTML = `<span>@${username}</span><span>You</span>`;
+      const you = document.createElement("span");
+      you.textContent = "You";
+      row.appendChild(you);
       searchResults.appendChild(row);
-      return;
+      continue;
     }
 
     // ADD FRIEND
@@ -226,11 +228,9 @@ row.appendChild(name);
       addBtn.disabled = true;
     };
 
-    row.innerHTML = `<span>@${username}</span>`;
     row.appendChild(addBtn);
     searchResults.appendChild(row);
-  });
-
+  }
 
   if (!found) {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
