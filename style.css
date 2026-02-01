@@ -206,20 +206,23 @@ button {
   color: #fff;
 }
 
-.badge.admin {
-  background: #ff9800;
-}
-
+/* VERIFIED */
 .badge.verified {
   background: #4caf50;
 }
 
+/* VIP */
 .badge.vip {
   background: #9c27b0;
 }
+
+/* ADMIN */
 .badge.admin {
-  background: #ff9800;   /* orange */
-  color: #fff;
+  background: #ff9800;
   font-weight: bold;
+}
+
+/* 👑 Crown before ADMIN */
+.badge.admin::before {
   content: "👑 ";
 }
