@@ -352,10 +352,12 @@ if (userSnap.val().badge && userSnap.val().badge !== "none") {
       removeBtn.className = "primary-btn";
       removeBtn.textContent = "Remove";
 
-      removeBtn.onclick = async () => {
-        await remove(ref(db, `friends/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friends/${friendUID}/${currentUID}`));
-      };
+      removeBtn.onclick = async (e) => {
+  e.stopPropagation(); // 🛑 STOP chat opening
+
+  await remove(ref(db, `friends/${currentUID}/${friendUID}`));
+  await remove(ref(db, `friends/${friendUID}/${currentUID}`));
+};
 
       row.onclick = () => openChat(friendUID, userSnap.val().username);
 
