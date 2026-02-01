@@ -4,6 +4,7 @@ import {
   ref,
   get,
   set,
+  update,   // ✅ ADD THIS
   push,
   onValue,
   remove,
@@ -92,11 +93,7 @@ googleLoginBtn.onclick = () => {
 };
 
 /* ================= AUTH ================= */
-// 🔥 HANDLE REDIRECT FIRST
-getRedirectResult(auth).catch(err => {
-  console.error("Login error:", err);
-  alert(err.message);
-});
+
 
 // 🔥 THEN LISTEN FOR AUTH STATE
 onAuthStateChanged(auth, async user => {
