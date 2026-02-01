@@ -353,10 +353,23 @@ if (badge) name.appendChild(badge);
 }
 
 /* ================= CHAT ================= */
-async function openChat(friendUID, username) {
+async function openChat(friendUID) {
   currentChatUID = friendUID;
   chatMessages.innerHTML = "";
-  chatUsername.textContent = "@" + username;
+
+  // 🔥 FIX: build chat header safely
+  chatUsername.innerHTML = "";
+
+  const userSnap = await get(ref(db, "users/" + friendUID));
+  const user = userSnap.val() || {};
+
+  const name = document.createElement("span");
+  name.textContent = "@" + user.username;
+
+  const badge = createBadge(user.badge);
+  if (badge) name.appendChild(badge);
+
+  chatUsername.appendChild(name);
   showScreen("chat");
 
   const chatId =
@@ -364,6 +377,7 @@ async function openChat(friendUID, username) {
       ? currentUID + "_" + friendUID
       : friendUID + "_" + currentUID;
 
+  // ✅ members
   set(ref(db, `chats/${chatId}/members/${currentUID}`), true);
   set(ref(db, `chats/${chatId}/members/${friendUID}`), true);
 
