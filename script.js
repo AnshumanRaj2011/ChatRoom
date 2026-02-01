@@ -85,7 +85,7 @@ let currentChatUID = null;
 let chatListenerRef = null;
 
 /* ================= START ================= */
-showScreen("login");
+
 
 /* ================= LOGIN ================= */
 googleLoginBtn.onclick = () => {
@@ -113,10 +113,7 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-getRedirectResult(auth).catch(err => {
-  console.error("Login error:", err);
-  alert(err.message);
-});
+
 
 /* ================= USERNAME ================= */
 saveUsernameBtn.onclick = async () => {
