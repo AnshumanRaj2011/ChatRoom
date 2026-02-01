@@ -346,21 +346,20 @@ async function openChat(friendUID, username) {
 
   showScreen("chat");
 
-  // 🔥 Get friend's data
+  // 🔥 Get friend's user data
   const friendSnap = await get(ref(db, "users/" + friendUID));
-  const friendRole = friendSnap.exists() ? friendSnap.val().role : "user";
+  const friendData = friendSnap.exists() ? friendSnap.val() : {};
 
-  // Default: show friend's name
+  // Default username
   chatUsername.textContent = "@" + username;
 
-  // 👑 If FRIEND is admin, show crown to ME
-  if (friendRole === "admin") {
-    const adminBadge = document.createElement("span");
-    adminBadge.textContent = " 👑 ADMIN";
-    adminBadge.style.color = "#ff9800";
-    adminBadge.style.fontSize = "12px";
-    adminBadge.style.marginLeft = "6px";
-    chatUsername.appendChild(adminBadge);
+  // ✅ Show badge based on FRIEND's badge
+  if (friendData.badge && friendData.badge !== "none") {
+    const badge = document.createElement("span");
+    badge.className = "badge " + friendData.badge;
+    badge.textContent = friendData.badge.toUpperCase();
+
+    chatUsername.appendChild(badge);
   }
 
   const chatId =
@@ -368,12 +367,11 @@ async function openChat(friendUID, username) {
       ? currentUID + "_" + friendUID
       : friendUID + "_" + currentUID;
 
-  // ✅ CREATE CHAT MEMBERS (REQUIRED FOR FIREBASE RULES)
+  // ✅ CREATE CHAT MEMBERS
   set(ref(db, "chats/" + chatId + "/members/" + currentUID), true);
   set(ref(db, "chats/" + chatId + "/members/" + friendUID), true);
 
   if (chatListenerRef) off(chatListenerRef);
-
   chatListenerRef = ref(db, "chats/" + chatId + "/messages");
 
   onValue(chatListenerRef, snap => {
@@ -387,14 +385,17 @@ async function openChat(friendUID, username) {
         "chat-message " + (data.from === currentUID ? "me" : "other");
       div.textContent = data.text;
 
-if (currentUserRole === "admin") {
-  const del = document.createElement("span");
-  del.textContent = " ❌";
-  del.style.cursor = "pointer";
-  del.style.marginLeft = "6px";
-  del.onclick = () => remove(msg.ref);
-  div.appendChild(del);
-}      chatMessages.appendChild(div);
+      // ❌ Delete only if *I* am admin
+      if (currentUserRole === "admin") {
+        const del = document.createElement("span");
+        del.textContent = " ❌";
+        del.style.cursor = "pointer";
+        del.style.marginLeft = "6px";
+        del.onclick = () => remove(msg.ref);
+        div.appendChild(del);
+      }
+
+      chatMessages.appendChild(div);
     });
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
