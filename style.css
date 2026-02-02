@@ -146,3 +146,28 @@ body {
 .hidden {
   display: none;
 }
+
+.video-box {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.video-box video {
+  width: 100%;
+  border-radius: 10px;
+  background: black;
+}
+
+.video-name {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
