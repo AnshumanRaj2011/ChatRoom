@@ -238,33 +238,7 @@ btnBackChat.onclick = async () => {
   showScreen("home");
 };
 
-// Visible top-bar Call button (starts a call)
-btnStartCall?.addEventListener("click", async () => {
-  if (!currentUID || !currentChatUID || !currentChatId) {
-    alert("Open a chat to start a call.");
-    return;
-  }
 
-  // Show video UI and disable the start-call button while dialing
-  showVideoUI(true);
-  btnStartCall.disabled = true;
-  btnCall.disabled = true; // keep internal consistency
-
-  try {
-    const { callId } = await startCall(db, currentChatId, currentUID, currentChatUID, {
-      localVideoEl: localVideo,
-      remoteVideoEl: remoteVideo
-    });
-    activeCallId = callId;
-    btnHangup.disabled = false;
-  } catch (err) {
-    console.error("startCall (btnStartCall) failed:", err);
-    alert("Failed to start call.");
-    // restore UI
-    btnStartCall.disabled = false;
-    resetVideoUI();
-  }
-});
 
 /* ===============================
    BADGE HELPERS (UNCHANGED)
@@ -669,25 +643,30 @@ function answerRef(dbInstance, chatId, callId) { return ref(dbInstance, `chats/$
 function candidatesRef(dbInstance, chatId, callId, side) { return ref(dbInstance, `chats/${chatId}/calls/${callId}/candidates/${side}`); }
 
 /* Listen for incoming calls in a chat */
-export function listenForIncomingCalls(dbInstance, chatId, currentUid, onIncoming) {
-  const root = callsRef(dbInstance, chatId);
+export function listenForIncomingCalls(db, chatId, currentUid, onIncoming) {
+  const root = callsRef(db, chatId);
+  const handled = new Set();
+
   const listener = snapshot => {
-    if (!snapshot.exists()) return;
     snapshot.forEach(child => {
       const callId = child.key;
-      const callObj = child.val();
-      if (callObj && callObj.offer && !callObj.answer) {
-        const offer = callObj.offer;
-        if (offer.uid && offer.uid !== currentUid) {
-          onIncoming({ callId, offer, fromUid: offer.uid, timestamp: offer.timestamp || Date.now() });
-        }
+      const call = child.val();
+
+      if (
+        call?.offer &&
+        !call?.answer &&
+        call.offer.uid !== currentUid &&
+        !handled.has(callId)
+      ) {
+        handled.add(callId);
+        onIncoming({ callId, offer: call.offer, fromUid: call.offer.uid });
       }
     });
   };
+
   onValue(root, listener);
   return () => off(root, "value", listener);
 }
-
 /* Start a call (caller) */
 export async function startCall(dbInstance, chatId, callerUid, calleeUid, ctx) {
   const { localVideoEl, remoteVideoEl } = ctx || {};
@@ -859,63 +838,5 @@ function resetVideoUI() {
   try { if (localVideo) { localVideo.pause(); localVideo.srcObject = null; } } catch(e){}
   try { if (remoteVideo) { remoteVideo.pause(); remoteVideo.srcObject = null; } } catch(e){}
 }
-
-/* Button handlers */
-btnCall?.addEventListener("click", async () => {
-  if (!currentUID || !currentChatUID) return;
-  btnCall.disabled = true;
-  showVideoUI(true);
-  const chatId = currentChatId;
-  try {
-    const { callId } = await startCall(db, chatId, currentUID, currentChatUID, {
-      localVideoEl: localVideo,
-      remoteVideoEl: remoteVideo
-    });
-    activeCallId = callId;
-    btnHangup.disabled = false;
-  } catch (err) {
-    console.error("startCall failed:", err);
-    alert("Failed to start call.");
-    resetVideoUI();
-  }
-});
-
-btnAnswer?.addEventListener("click", async () => {
-  if (!pendingIncomingCall || !currentUID) return;
-  btnAnswer.disabled = true;
-  showVideoUI(true);
-  const { callId } = pendingIncomingCall;
-  try {
-    await answerCall(db, currentChatId, callId, currentUID, {
-      localVideoEl: localVideo,
-      remoteVideoEl: remoteVideo
-    });
-    activeCallId = callId;
-    pendingIncomingCall = null;
-    btnHangup.disabled = false;
-  } catch (err) {
-    console.error("answerCall failed:", err);
-    alert("Failed to answer call.");
-    resetVideoUI();
-  }
-});
-
-btnHangup?.addEventListener("click", async () => {
-  if (!activeCallId) {
-    if (pendingIncomingCall) {
-      try { await hangupCall(db, currentChatId, pendingIncomingCall.callId); } catch(e){ console.error(e); }
-      pendingIncomingCall = null;
-    }
-    resetVideoUI();
-    return;
-  }
-  try {
-    await hangupCall(db, currentChatId, activeCallId);
-  } catch (err) {
-    console.error("hangupCall failed:", err);
-  } finally {
-    resetVideoUI();
-  }
-});
 
 /* ================= End of file ================= */
