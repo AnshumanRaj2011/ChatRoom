@@ -622,7 +622,7 @@ function openChat(friendUID, username) {
     }
     pendingIncomingCall = { callId, fromUid };
     btnAnswer.disabled = false;
-    
+    btnStartCall.disabled = true;
     showVideoUI(true);
 
     // Optionally fetch caller username and show in UI (left as improvement)
