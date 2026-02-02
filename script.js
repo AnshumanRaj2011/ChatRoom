@@ -217,6 +217,38 @@ btnBackChat.onclick = async () => {
     }
   }
 
+  /* ================= START CALL BUTTON ================= */
+btnStartCall.addEventListener("click", async () => {
+  if (!currentUID || !currentChatUID || !currentChatId) {
+    alert("Open a chat first");
+    return;
+  }
+
+  btnStartCall.disabled = true;
+  showVideoUI(true);
+
+  try {
+    const { callId } = await startCall(
+      db,
+      currentChatId,
+      currentUID,
+      currentChatUID,
+      {
+        localVideoEl: localVideo,
+        remoteVideoEl: remoteVideo
+      }
+    );
+
+    activeCallId = callId;
+    btnHangup.disabled = false;
+  } catch (err) {
+    console.error("startCall failed:", err);
+    btnStartCall.disabled = false;
+    resetVideoUI();
+    alert("Failed to start call");
+  }
+});
+
   // detach messages listener
   if (chatListenerRef) off(chatListenerRef);
   chatListenerRef = null;
@@ -628,9 +660,16 @@ chatForm.onsubmit = async e => {
                                                      /callee/{pushId}
 */
 
-const STUN_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
-const ICE_CONFIG = { iceServers: STUN_SERVERS };
-
+const ICE_CONFIG = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject"
+    }
+  ]
+};
 // Internal state
 const localStreams = new Map();
 const peerConnections = new Map();
@@ -830,13 +869,68 @@ function showVideoUI(show) {
 
 function resetVideoUI() {
   showVideoUI(false);
-  btnCall.disabled = false;
+
   btnAnswer.disabled = true;
   btnHangup.disabled = true;
   pendingIncomingCall = null;
   activeCallId = null;
-  try { if (localVideo) { localVideo.pause(); localVideo.srcObject = null; } } catch(e){}
-  try { if (remoteVideo) { remoteVideo.pause(); remoteVideo.srcObject = null; } } catch(e){}
-}
 
+  try {
+    if (localVideo && localVideo.srcObject) {
+      localVideo.srcObject.getTracks().forEach(t => t.stop());
+      localVideo.srcObject = null;
+    }
+  } catch (e) {}
+
+  try {
+    if (remoteVideo) {
+      remoteVideo.srcObject = null;
+    }
+  } catch (e) {}
+}
+/* ================= ANSWER CALL BUTTON ================= */
+btnAnswer.addEventListener("click", async () => {
+  if (!pendingIncomingCall || !currentChatId || !currentUID) return;
+
+  btnAnswer.disabled = true;
+  showVideoUI(true);
+
+  try {
+    await answerCall(
+      db,
+      currentChatId,
+      pendingIncomingCall.callId,
+      currentUID,
+      {
+        localVideoEl: localVideo,
+        remoteVideoEl: remoteVideo
+      }
+    );
+
+    activeCallId = pendingIncomingCall.callId;
+    pendingIncomingCall = null;
+    btnHangup.disabled = false;
+  } catch (err) {
+    console.error("answerCall failed:", err);
+    alert("Failed to answer call");
+    resetVideoUI();
+  }
+});
+
+/* ================= HANGUP BUTTON ================= */
+btnHangup.addEventListener("click", async () => {
+  try {
+    if (activeCallId && currentChatId) {
+      await hangupCall(db, currentChatId, activeCallId);
+    } else if (pendingIncomingCall && currentChatId) {
+      await hangupCall(db, currentChatId, pendingIncomingCall.callId);
+      pendingIncomingCall = null;
+    }
+  } catch (err) {
+    console.error("hangupCall failed:", err);
+  } finally {
+    resetVideoUI();
+    if (btnStartCall) btnStartCall.disabled = false;
+  }
+});
 /* ================= End of file ================= */
