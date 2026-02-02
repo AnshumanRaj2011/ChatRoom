@@ -99,6 +99,7 @@ let currentChatId = null;
 let incomingCallDetach = null;
 let pendingIncomingCall = null; // { callId, fromUid }
 let activeCallId = null;
+let globalCallListenerRef = null;
 
 /* ================= START ================= */
 showScreen("login");
@@ -124,8 +125,6 @@ onAuthStateChanged(auth, async user => {
   }
 
   currentUID = user.uid;
-
-  let globalCallListenerRef = null;
 
 function startGlobalIncomingCallListener() {
   if (!currentUID) return;
