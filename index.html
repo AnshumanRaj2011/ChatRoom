@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ChatRoom</title>
+
+  <!-- YOUR CSS -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,7 +13,7 @@
 <!-- ================= LOGIN ================= -->
 <div id="screen-login" class="screen active">
   <div class="center-box">
-    <h2>Welcome to ChatRoom</h2>
+    <h2>Login</h2>
     <button id="google-login-btn" class="primary-btn">Login with Google</button>
   </div>
 </div>
@@ -19,7 +21,7 @@
 <!-- ================= USERNAME ================= -->
 <div id="screen-username" class="screen">
   <div class="center-box">
-    <h2>Choose Username</h2>
+    <h2>Create Username</h2>
     <input id="username-input" placeholder="username" />
     <button id="save-username-btn" class="primary-btn">Save</button>
   </div>
@@ -28,13 +30,20 @@
 <!-- ================= HOME ================= -->
 <div id="screen-home" class="screen">
   <div class="top-bar">
-    <span>Friends</span>
+    <h3>Friends</h3>
     <div class="top-actions">
       <button id="btn-search">Search</button>
-      <button id="btn-requests">Requests</button>
+
+      <!-- 🔥 REQUESTS BUTTON + BADGE -->
+      <button id="btn-requests">
+        Requests
+        <span id="requests-badge" class="badge" hidden></span>
+      </button>
+
       <button id="btn-logout">Logout</button>
     </div>
   </div>
+
   <div id="friends-list" class="list"></div>
 </div>
 
@@ -42,9 +51,10 @@
 <div id="screen-search" class="screen">
   <div class="top-bar">
     <button id="btn-back-search">⬅</button>
-    <span>Search</span>
+    <h3>Search Users</h3>
   </div>
-  <input id="search-input" placeholder="Search username" />
+
+  <input id="search-input" placeholder="Search username..." />
   <div id="search-results" class="list"></div>
 </div>
 
@@ -52,26 +62,34 @@
 <div id="screen-requests" class="screen">
   <div class="top-bar">
     <button id="btn-back-requests">⬅</button>
-    <span>Friend Requests</span>
+    <h3>Friend Requests</h3>
   </div>
+
   <div id="request-list" class="list"></div>
 </div>
 
 <!-- ================= CHAT ================= -->
 <div id="screen-chat" class="screen">
   <div class="top-bar">
+    <!-- 🔥 REQUIRED BACK BUTTON -->
     <button id="btn-back-chat">⬅</button>
+
+    <!-- 🔥 CHAT USERNAME -->
     <div id="chat-username"></div>
   </div>
 
+  <!-- 🔥 CHAT MESSAGES -->
   <div id="chat-messages" class="chat-list"></div>
 
+  <!-- 🔥 CHAT FORM -->
   <form id="chat-form" class="chat-form">
     <input id="chat-input" placeholder="Type a message..." />
     <button class="primary-btn">Send</button>
   </form>
 </div>
 
+<!-- ================= SCRIPT ================= -->
 <script type="module" src="script.js"></script>
+
 </body>
 </html>
