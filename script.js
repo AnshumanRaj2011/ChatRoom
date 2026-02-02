@@ -80,6 +80,11 @@ let requestsListenerRef = null;
 let currentChatUID = null;
 let chatListenerRef = null;
 
+/* ---------------- Added globals for badge caching and current chat id ---------------- */
+let badgeListenerRef = null;
+let currentUserBadge = null; // normalized lowercase string or null
+let currentChatId = null;
+
 /* ================= START ================= */
 showScreen("login");
 
@@ -90,6 +95,13 @@ googleLoginBtn.onclick = async () => {
 
 /* ================= AUTH ================= */
 onAuthStateChanged(auth, async user => {
+  // Clean up previous badge listener (if any)
+  if (badgeListenerRef) {
+    try { off(badgeListenerRef); } catch (e) { /* ignore */ }
+    badgeListenerRef = null;
+    currentUserBadge = null;
+  }
+
   if (!user) {
     currentUID = null;
     showScreen("login");
@@ -97,6 +109,28 @@ onAuthStateChanged(auth, async user => {
   }
 
   currentUID = user.uid;
+
+  // Subscribe to user's badge in order to detect GOD quickly and update UI
+  badgeListenerRef = ref(db, "users/" + currentUID + "/badge");
+  onValue(badgeListenerRef, async snap => {
+    const b = snap.exists() ? snap.val() : null;
+    currentUserBadge =
+      (typeof b === "string" && b.length > 0) ? String(b).toLowerCase() : null;
+
+    // If currently in a chat, refresh messages so delete icons update
+    if (currentChatId) {
+      try {
+        const chatSnap = await get(ref(db, `chats/${currentChatId}/messages`));
+        await renderChatFromSnapshot(chatSnap, currentChatId);
+      } catch (err) {
+        console.error("Error refreshing chat after badge change:", err);
+      }
+    }
+  }, err => {
+    console.error("Failed to listen user badge:", err);
+    currentUserBadge = null;
+  });
+
   const snap = await get(ref(db, "users/" + currentUID));
 
   if (snap.exists()) {
@@ -132,8 +166,11 @@ saveUsernameBtn.onclick = async () => {
 logoutBtn.onclick = async () => {
   if (friendsListenerRef) off(friendsListenerRef);
   if (requestsListenerRef) off(requestsListenerRef);
+  if (chatListenerRef) off(chatListenerRef);
+  if (badgeListenerRef) off(badgeListenerRef);
   await signOut(auth);
   showScreen("login");
+  currentChatId = null;
 };
 
 /* ================= NAV ================= */
@@ -152,12 +189,14 @@ btnBackRequests.onclick = () => showScreen("home");
 
 btnBackChat.onclick = () => {
   if (chatListenerRef) off(chatListenerRef);
+  chatListenerRef = null;
   currentChatUID = null;
+  currentChatId = null;
   showScreen("home");
 };
 
 /* ===============================
-   BADGE HELPERS (FIX)
+   BADGE HELPERS (UNCHANGED)
    =============================== */
 // Synchronous badge factory — returns an HTMLElement (safe to append)
 function createBadge(type) {
@@ -177,19 +216,25 @@ function createBadge(type) {
 }
 
 // 🔁 Universal username renderer with badge (async because it reads DB)
+// (left intact so badges show across the UI)
 async function createUsernameNode(uid) {
   const userSnap = await get(ref(db, "users/" + uid));
   const user = userSnap.val();
 
+  const container = document.createElement("span");
+  container.className = "username-node";
+
   const name = document.createElement("span");
   name.textContent = "@" + (user?.username || "unknown");
+  name.className = "username-text";
+  container.appendChild(name);
 
   if (user?.badge) {
     // createBadge is synchronous so appendChild won't throw
-    name.appendChild(createBadge(user.badge));
+    container.appendChild(createBadge(user.badge));
   }
 
-  return name;
+  return container;
 }
 
 /* ================= SEARCH ================= */
@@ -361,6 +406,104 @@ function loadFriends() {
   });
 }
 
+/* =========================
+   CHAT: render with delete
+   ========================= */
+
+/**
+ * Render a snapshot of messages into chatMessages for the given chatId.
+ * This is async because createUsernameNode uses async DB calls.
+ */
+async function renderChatFromSnapshot(snap, chatId) {
+  chatMessages.innerHTML = "";
+
+  if (!snap || !snap.exists()) return;
+
+  // Build element promises in the same order as messages in snapshot
+  const elems = [];
+  snap.forEach(childSnap => {
+    elems.push(buildMessageElement(childSnap));
+  });
+
+  const built = await Promise.all(elems);
+
+  for (const el of built) {
+    chatMessages.appendChild(el);
+  }
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/**
+ * Build a message DOM element from a child snapshot.
+ * Shows the delete icon (❌) if (msg.from === currentUID) OR currentUserBadge === "god".
+ * When clicked it calls remove(childSnap.ref).
+ */
+async function buildMessageElement(childSnap) {
+  const data = childSnap.val() || {};
+  const fromUid = data.from || null;
+  const text = data.text || "";
+  const time = data.time || null;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "chat-message " + (fromUid === currentUID ? "me" : "other");
+
+  // Left: author node (username + badge)
+  const authorNode = await createUsernameNode(fromUid);
+  authorNode.classList.add("message-author");
+  wrapper.appendChild(authorNode);
+
+  // Middle: message text
+  const content = document.createElement("div");
+  content.className = "message-content";
+  content.textContent = text;
+  wrapper.appendChild(content);
+
+  // Timestamp (optional)
+  const ts = document.createElement("div");
+  ts.className = "message-time";
+  ts.textContent = time ? new Date(time).toLocaleTimeString() : "";
+  wrapper.appendChild(ts);
+
+  // Controls container
+  const controls = document.createElement("div");
+  controls.className = "message-controls";
+  wrapper.appendChild(controls);
+
+  // Determine delete permission
+  const isOwner = (currentUID && fromUid && currentUID === fromUid);
+  const isGod = (currentUserBadge === "god");
+  const canDelete = isOwner || isGod;
+
+  if (canDelete) {
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "message-delete-btn";
+    delBtn.setAttribute("aria-label", "Delete message");
+    delBtn.textContent = "❌";
+
+    delBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      delBtn.disabled = true;
+      try {
+        // Use remove on the snapshot's ref per your requirement
+        await remove(childSnap.ref);
+        // The onValue listener will re-render and remove the element.
+        // As immediate feedback, remove from DOM now.
+        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+      } catch (err) {
+        console.error("Failed to delete message:", err);
+        delBtn.disabled = false;
+        alert("Failed to delete message.");
+      }
+    });
+
+    controls.appendChild(delBtn);
+  }
+
+  return wrapper;
+}
+
 function openChat(friendUID, username) {
   currentChatUID = friendUID;
   chatUsername.textContent = "@" + username;
@@ -373,32 +516,27 @@ function openChat(friendUID, username) {
       ? currentUID + "_" + friendUID
       : friendUID + "_" + currentUID;
 
+  // Save for badge-change refreshes
+  currentChatId = chatId;
+
   // ✅ CREATE CHAT MEMBERS (REQUIRED FOR FIREBASE RULES)
   set(ref(db, "chats/" + chatId + "/members/" + currentUID), true);
   set(ref(db, "chats/" + chatId + "/members/" + friendUID), true);
 
   if (chatListenerRef) off(chatListenerRef);
 
+  // Listen for changes and render using the async renderer
   chatListenerRef = ref(db, "chats/" + chatId + "/messages");
-
-  onValue(chatListenerRef, snap => {
-    chatMessages.innerHTML = "";
-    if (!snap.exists()) return;
-
-    snap.forEach(msg => {
-      const data = msg.val();
-      const div = document.createElement("div");
-      div.className =
-        "chat-message " + (data.from === currentUID ? "me" : "other");
-      div.textContent = data.text;
-      chatMessages.appendChild(div);
-    });
-
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+  onValue(chatListenerRef, async snap => {
+    try {
+      await renderChatFromSnapshot(snap, chatId);
+    } catch (err) {
+      console.error("Failed rendering chat messages:", err);
+    }
   });
 }
 
-// ================= SEND MESSAGE =================
+/* ================= SEND MESSAGE ================= */
 chatForm.onsubmit = async e => {
   e.preventDefault();
 
