@@ -32,40 +32,34 @@
   <div class="top-bar">
     <h3>Friends</h3>
     <div class="top-actions">
-      <button id="btn-search">Search</button>
-
-      <!-- 🔥 REQUESTS BUTTON + BADGE -->
-      <button id="btn-requests">
-        Requests
-        <span id="requests-badge" class="badge" hidden></span>
-      </button>
-
-      <button id="btn-logout">Logout</button>
+      <button id="btn-search" class="primary-btn">Search</button>
+      <button id="btn-requests" class="primary-btn">Requests</button>
+      <button id="btn-logout" class="danger-btn">Logout</button>
     </div>
   </div>
 
-  <div id="friends-list" class="list"></div>
+  <div id="friends-list"></div>
 </div>
 
 <!-- ================= SEARCH ================= -->
 <div id="screen-search" class="screen">
   <div class="top-bar">
     <button id="btn-back-search">⬅</button>
-    <h3>Search Users</h3>
+    <h3>Search</h3>
   </div>
 
   <input id="search-input" placeholder="Search username..." />
-  <div id="search-results" class="list"></div>
+  <div id="search-results"></div>
 </div>
 
 <!-- ================= REQUESTS ================= -->
 <div id="screen-requests" class="screen">
   <div class="top-bar">
     <button id="btn-back-requests">⬅</button>
-    <h3>Friend Requests</h3>
+    <h3>Requests</h3>
   </div>
 
-  <div id="request-list" class="list"></div>
+  <div id="request-list"></div>
 </div>
 
 <!-- ================= CHAT ================= -->
@@ -76,6 +70,26 @@
 
     <!-- 🔥 CHAT USERNAME -->
     <div id="chat-username"></div>
+  </div>
+
+  <!-- VIDEO UI (added) -->
+  <div id="video-container" class="video-container hidden">
+    <div class="video-columns">
+      <div class="video-box">
+        <label>Local</label>
+        <video id="localVideo" autoplay playsinline muted></video>
+      </div>
+      <div class="video-box">
+        <label>Remote</label>
+        <video id="remoteVideo" autoplay playsinline></video>
+      </div>
+    </div>
+
+    <div class="video-controls">
+      <button id="btn-call" class="primary-btn">Call</button>
+      <button id="btn-answer" class="primary-btn" disabled>Answer</button>
+      <button id="btn-hangup" class="danger-btn" disabled>Hang up</button>
+    </div>
   </div>
 
   <!-- 🔥 CHAT MESSAGES -->
