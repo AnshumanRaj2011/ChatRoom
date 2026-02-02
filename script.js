@@ -81,6 +81,9 @@ const remoteVideo = document.getElementById("remoteVideo");
 const btnAnswer = document.getElementById("btn-answer");
 const btnHangup = document.getElementById("btn-hangup");
 
+const localNameEl = document.getElementById("local-name");
+const remoteNameEl = document.getElementById("remote-name");
+
 /* ================= STATE ================= */
 let currentUID = null;
 let friendsListenerRef = null;
