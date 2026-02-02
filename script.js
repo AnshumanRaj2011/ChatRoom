@@ -64,19 +64,24 @@ const btnBackRequests = document.getElementById("btn-back-requests");
 const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
 const requestList = document.getElementById("request-list");
-/* ================= CHAT DOM ================= */
+
+/* CHAT DOM */
 const chatUsername = document.getElementById("chat-username");
 const chatMessages = document.getElementById("chat-messages");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const btnBackChat = document.getElementById("btn-back-chat");
 
+/* BADGE DOM */
+const requestsBadge = document.getElementById("requests-badge");
+
 /* ================= STATE ================= */
 let currentUID = null;
 let friendsListenerRef = null;
 let requestsListenerRef = null;
+let requestsCountListenerRef = null;
 
-/* 🔥 CHAT STATE (ADD, DO NOT REPLACE) */
+/* CHAT STATE */
 let currentChatUID = null;
 let chatListenerRef = null;
 
@@ -84,175 +89,171 @@ let chatListenerRef = null;
 showScreen("login");
 
 /* ================= LOGIN ================= */
-googleLoginBtn.onclick = async () => {
-  await signInWithPopup(auth, provider);
-};
+googleLoginBtn.addEventListener("click", async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error("Sign in failed", err);
+  }
+});
 
 /* ================= AUTH ================= */
 onAuthStateChanged(auth, async user => {
+  // cleanup first on sign-out
   if (!user) {
     currentUID = null;
+    if (friendsListenerRef) off(friendsListenerRef);
+    if (requestsListenerRef) off(requestsListenerRef);
+    if (requestsCountListenerRef) off(requestsCountListenerRef);
+    updateRequestsBadge(0);
     showScreen("login");
     return;
   }
 
   currentUID = user.uid;
-  const snap = await get(ref(db, "users/" + currentUID));
 
-  if (snap.exists()) {
-    showScreen("home");
-    loadFriends();
-  } else {
-    showScreen("username");
+  try {
+    const snap = await get(ref(db, "users/" + currentUID));
+    if (snap.exists()) {
+      showScreen("home");
+      loadFriends();
+      watchRequestCount();
+    } else {
+      showScreen("username");
+    }
+  } catch (err) {
+    console.error("Auth state handling failed", err);
   }
 });
 
 /* ================= USERNAME ================= */
-saveUsernameBtn.onclick = async () => {
+saveUsernameBtn.addEventListener("click", async () => {
   const username = usernameInput.value.trim().toLowerCase();
   if (!/^[a-z0-9_]{3,}$/.test(username)) {
     alert("Invalid username");
     return;
   }
 
-  const nameRef = ref(db, "usernames/" + username);
-  if ((await get(nameRef)).exists()) {
-    alert("Username already taken");
-    return;
+  try {
+    const nameRef = ref(db, "usernames/" + username);
+    if ((await get(nameRef)).exists()) {
+      alert("Username already taken");
+      return;
+    }
+
+    await set(nameRef, currentUID);
+    await set(ref(db, "users/" + currentUID), { username });
+
+    showScreen("home");
+    loadFriends();
+    watchRequestCount();
+  } catch (err) {
+    console.error("Saving username failed", err);
   }
-
-  await set(nameRef, currentUID);
-  await set(ref(db, "users/" + currentUID), { username });
-
-  showScreen("home");
-  loadFriends();
-};
+});
 
 /* ================= LOGOUT ================= */
-logoutBtn.onclick = async () => {
-  if (friendsListenerRef) off(friendsListenerRef);
-  if (requestsListenerRef) off(requestsListenerRef);
-  await signOut(auth);
-  showScreen("login");
-};
+logoutBtn.addEventListener("click", async () => {
+  try {
+    if (friendsListenerRef) off(friendsListenerRef);
+    if (requestsListenerRef) off(requestsListenerRef);
+    if (requestsCountListenerRef) off(requestsCountListenerRef);
+    await signOut(auth);
+    updateRequestsBadge(0);
+    showScreen("login");
+  } catch (err) {
+    console.error("Logout failed", err);
+  }
+});
 
 /* ================= NAV ================= */
-btnSearch.onclick = () => {
+btnSearch.addEventListener("click", () => {
   searchInput.value = "";
   searchResults.innerHTML = "";
   showScreen("search");
-};
-btnBackSearch.onclick = () => showScreen("home");
+});
+btnBackSearch.addEventListener("click", () => showScreen("home"));
 
-btnRequests.onclick = () => {
+btnRequests.addEventListener("click", () => {
   showScreen("requests");
   loadRequests();
-};
-btnBackRequests.onclick = () => showScreen("home");
+});
+btnBackRequests.addEventListener("click", () => showScreen("home"));
 
-btnBackChat.onclick = () => {
+btnBackChat.addEventListener("click", () => {
   if (chatListenerRef) off(chatListenerRef);
   currentChatUID = null;
   showScreen("home");
-};
+});
 
-/* ===============================
-   BADGE HELPERS (FIX)
-   =============================== */
-// Synchronous badge factory — returns an HTMLElement (safe to append)
-function createBadge(type) {
-  const span = document.createElement("span");
-  const t = String(type || "").toLowerCase();
-  span.className = "badge " + t;
-
-  // map type -> visible label/icon
-  const labels = {
-    verified: "✔",
-    vip: "VIP",
-    god: "GOD"
+/* ================= SEARCH (debounced) ================= */
+function debounce(fn, ms = 300) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), ms);
   };
-
-  span.textContent = labels[t] || String(type);
-  return span;
 }
 
-// 🔁 Universal username renderer with badge (async because it reads DB)
-async function createUsernameNode(uid) {
-  const userSnap = await get(ref(db, "users/" + uid));
-  const user = userSnap.val();
+searchInput.addEventListener(
+  "input",
+  debounce(async () => {
+    const query = searchInput.value.trim().toLowerCase();
+    searchResults.innerHTML = "";
 
-  const name = document.createElement("span");
-  name.textContent = "@" + (user?.username || "unknown");
-
-  if (user?.badge) {
-    // createBadge is synchronous so appendChild won't throw
-    name.appendChild(createBadge(user.badge));
-  }
-
-  return name;
-}
-
-/* ================= SEARCH ================= */
-searchInput.addEventListener("input", async () => {
-  const query = searchInput.value.trim().toLowerCase();
-  searchResults.innerHTML = "";
-
-  if (!query) {
-    searchResults.innerHTML = `<p class="empty-text">Type a username</p>`;
-    return;
-  }
-
-  const snap = await get(ref(db, "usernames"));
-  if (!snap.exists()) {
-    searchResults.innerHTML = `<p class="empty-text">No users yet</p>`;
-    return;
-  }
-
-  const usernames = snap.val();
-  let found = false;
-
-  for (const username in usernames) {
-    const uid = usernames[username];
-
-    if (!username.toLowerCase().includes(query)) continue;
-
-    found = true;
-
-    const row = document.createElement("div");
-    row.className = "list-item";
-
-    // Use the universal renderer so badges show here too
-    const nameNode = await createUsernameNode(uid);
-    row.appendChild(nameNode);
-
-    if (uid === currentUID) {
-      const you = document.createElement("span");
-      you.textContent = "You";
-      row.appendChild(you);
-      searchResults.appendChild(row);
-      continue;
+    if (!query) {
+      searchResults.innerHTML = `<p class="empty-text">Type a username</p>`;
+      return;
     }
 
-    const btn = document.createElement("button");
-    btn.className = "primary-btn";
-    btn.textContent = "Add";
+    try {
+      const usernamesSnap = await get(ref(db, "usernames"));
+      if (!usernamesSnap.exists()) {
+        searchResults.innerHTML = `<p class="empty-text">No users yet</p>`;
+        return;
+      }
 
-    btn.onclick = async () => {
-      await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
-        time: Date.now()
+      let found = false;
+      usernamesSnap.forEach(child => {
+        const username = child.key;
+        const uid = child.val();
+        if (!username.startsWith(query)) return;
+        found = true;
+
+        const row = document.createElement("div");
+        row.className = "list-item";
+
+        if (uid === currentUID) {
+          row.innerHTML = `<span>@${username}</span><span>You</span>`;
+          searchResults.appendChild(row);
+          return;
+        }
+
+        const addBtn = document.createElement("button");
+        addBtn.className = "primary-btn";
+        addBtn.textContent = "Add";
+
+        addBtn.addEventListener("click", async () => {
+          await set(ref(db, `friend_requests/${uid}/${currentUID}`), {
+            time: Date.now()
+          });
+          addBtn.textContent = "Sent";
+          addBtn.disabled = true;
+        });
+
+        row.innerHTML = `<span>@${username}</span>`;
+        row.appendChild(addBtn);
+        searchResults.appendChild(row);
       });
-      btn.textContent = "Sent";
-      btn.disabled = true;
-    };
 
-    row.appendChild(btn);
-    searchResults.appendChild(row);
-  }
-
-  if (!found) {
-    searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
-  }
-});
+      if (!found) {
+        searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
+      }
+    } catch (err) {
+      console.error("Search failed", err);
+    }
+  }, 300)
+);
 
 /* ================= REQUESTS ================= */
 function loadRequests() {
@@ -269,46 +270,51 @@ function loadRequests() {
       return;
     }
 
-    for (const fromUID of Object.keys(snap.val())) {
-      const uSnap = await get(ref(db, "users/" + fromUID));
-      if (!uSnap.exists()) continue;
+    const requestsObj = snap.val();
+    for (const fromUID of Object.keys(requestsObj)) {
+      try {
+        const uSnap = await get(ref(db, "users/" + fromUID));
+        if (!uSnap.exists()) continue;
 
-      const row = document.createElement("div");
-      row.className = "list-item";
+        const row = document.createElement("div");
+        row.className = "list-item";
 
-      // Use universal renderer (shows badge if any)
-      const name = await createUsernameNode(fromUID);
+        const name = document.createElement("span");
+        name.textContent = "@" + uSnap.val().username;
 
-      const accept = document.createElement("button");
-      accept.className = "primary-btn";
-      accept.textContent = "Accept";
+        const accept = document.createElement("button");
+        accept.className = "primary-btn";
+        accept.textContent = "Accept";
 
-      const reject = document.createElement("button");
-      reject.className = "danger-btn";
-      reject.textContent = "Reject";
+        const reject = document.createElement("button");
+        reject.className = "danger-btn";
+        reject.textContent = "Reject";
 
-      accept.onclick = async () => {
-        // 1️⃣ Add friends on BOTH sides
-        await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
-        await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+        accept.addEventListener("click", async () => {
+          // 1️⃣ Add friends on BOTH sides
+          await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+          await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
 
-        // 2️⃣ Remove requests on BOTH sides
-        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-        await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
+          // 2️⃣ Remove requests on BOTH sides
+          await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+          await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
 
-        // 3️⃣ Switch screen & refresh
-        showScreen("home");
-        loadFriends();
-      };
+          // 3️⃣ Switch screen & refresh
+          showScreen("home");
+          loadFriends();
+        });
 
-      reject.onclick = async () => {
-        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-      };
+        reject.addEventListener("click", async () => {
+          await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+        });
 
-      row.appendChild(name);
-      row.appendChild(accept);
-      row.appendChild(reject);
-      requestList.appendChild(row);
+        row.appendChild(name);
+        row.appendChild(accept);
+        row.appendChild(reject);
+        requestList.appendChild(row);
+      } catch (err) {
+        console.error("Processing request failed", err);
+      }
     }
   });
 }
@@ -320,7 +326,6 @@ function loadFriends() {
   if (!currentUID) return;
 
   if (friendsListenerRef) off(friendsListenerRef);
-
   friendsListenerRef = ref(db, "friends/" + currentUID);
 
   onValue(friendsListenerRef, async snap => {
@@ -331,36 +336,41 @@ function loadFriends() {
       return;
     }
 
-    for (const friendUID of Object.keys(snap.val())) {
-      const userSnap = await get(ref(db, "users/" + friendUID));
-      if (!userSnap.exists()) continue;
+    const friendsObj = snap.val();
+    for (const friendUID of Object.keys(friendsObj)) {
+      try {
+        const userSnap = await get(ref(db, "users/" + friendUID));
+        if (!userSnap.exists()) continue;
 
-      const row = document.createElement("div");
-      row.className = "list-item";
+        const row = document.createElement("div");
+        row.className = "list-item";
 
-      // Create name with badge
-      const nameNode = await createUsernameNode(friendUID);
+        const name = document.createElement("span");
+        name.textContent = "@" + userSnap.val().username;
 
-      const removeBtn = document.createElement("button");
-      removeBtn.className = "primary-btn";
-      removeBtn.textContent = "Remove";
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "primary-btn";
+        removeBtn.textContent = "Remove";
 
-      removeBtn.onclick = async () => {
-        await remove(ref(db, `friends/${currentUID}/${friendUID}`));
-        await remove(ref(db, `friends/${friendUID}/${currentUID}`));
-      };
+        removeBtn.addEventListener("click", async e => {
+          e.stopPropagation();
+          await remove(ref(db, `friends/${currentUID}/${friendUID}`));
+          await remove(ref(db, `friends/${friendUID}/${currentUID}`));
+        });
 
-      // Keep username string for openChat
-      const username = userSnap.val().username || "unknown";
-      row.onclick = () => openChat(friendUID, username);
+        row.addEventListener("click", () => openChat(friendUID, userSnap.val().username));
 
-      row.appendChild(nameNode);
-      row.appendChild(removeBtn);
-      friendsList.appendChild(row);
+        row.appendChild(name);
+        row.appendChild(removeBtn);
+        friendsList.appendChild(row);
+      } catch (err) {
+        console.error("Loading friend failed", err);
+      }
     }
   });
 }
 
+/* ================= CHAT ================= */
 function openChat(friendUID, username) {
   currentChatUID = friendUID;
   chatUsername.textContent = "@" + username;
@@ -368,17 +378,13 @@ function openChat(friendUID, username) {
 
   showScreen("chat");
 
-  const chatId =
-    currentUID < friendUID
-      ? currentUID + "_" + friendUID
-      : friendUID + "_" + currentUID;
+  const chatId = currentUID < friendUID ? currentUID + "_" + friendUID : friendUID + "_" + currentUID;
 
-  // ✅ CREATE CHAT MEMBERS (REQUIRED FOR FIREBASE RULES)
+  // ensure members exist
   set(ref(db, "chats/" + chatId + "/members/" + currentUID), true);
   set(ref(db, "chats/" + chatId + "/members/" + friendUID), true);
 
   if (chatListenerRef) off(chatListenerRef);
-
   chatListenerRef = ref(db, "chats/" + chatId + "/messages");
 
   onValue(chatListenerRef, snap => {
@@ -388,32 +394,4 @@ function openChat(friendUID, username) {
     snap.forEach(msg => {
       const data = msg.val();
       const div = document.createElement("div");
-      div.className =
-        "chat-message " + (data.from === currentUID ? "me" : "other");
-      div.textContent = data.text;
-      chatMessages.appendChild(div);
-    });
-
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  });
-}
-
-// ================= SEND MESSAGE =================
-chatForm.onsubmit = async e => {
-  e.preventDefault();
-
-  if (!chatInput.value.trim() || !currentChatUID) return;
-
-  const chatId =
-    currentUID < currentChatUID
-      ? currentUID + "_" + currentChatUID
-      : currentChatUID + "_" + currentUID;
-
-  await push(ref(db, "chats/" + chatId + "/messages"), {
-    from: currentUID,
-    text: chatInput.value.trim(),
-    time: Date.now()
-  });
-
-  chatInput.value = "";
-};
+      div.className = "chat-message "
