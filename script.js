@@ -77,7 +77,7 @@ const btnStartCall = document.getElementById("btn-start-call");
 const videoContainer = document.getElementById("video-container");
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
-const btnCall = document.getElementById("btn-call");
+
 const btnAnswer = document.getElementById("btn-answer");
 const btnHangup = document.getElementById("btn-hangup");
 
@@ -622,7 +622,7 @@ function openChat(friendUID, username) {
     }
     pendingIncomingCall = { callId, fromUid };
     btnAnswer.disabled = false;
-    btnCall.disabled = true;
+    
     showVideoUI(true);
 
     // Optionally fetch caller username and show in UI (left as improvement)
