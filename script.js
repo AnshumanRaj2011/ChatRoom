@@ -81,9 +81,6 @@ const remoteVideo = document.getElementById("remoteVideo");
 const btnAnswer = document.getElementById("btn-answer");
 const btnHangup = document.getElementById("btn-hangup");
 
-const btnToggleCamera = document.getElementById("btn-toggle-camera");
-const btnFlipCamera = document.getElementById("btn-flip-camera");
-
 /* ================= STATE ================= */
 let currentUID = null;
 let friendsListenerRef = null;
@@ -102,9 +99,6 @@ let currentChatId = null;
 let incomingCallDetach = null;
 let pendingIncomingCall = null; // { callId, fromUid }
 let activeCallId = null;
-
-let isCameraOn = true;
-let currentVideoDeviceId = null;
 
 /* ================= START ================= */
 showScreen("login");
@@ -894,69 +888,6 @@ function resetVideoUI() {
     }
   } catch (e) {}
 }
-
-btnToggleCamera.addEventListener("click", () => {
-  if (!localVideo || !localVideo.srcObject) return;
-
-  const videoTrack = localVideo.srcObject
-    .getTracks()
-    .find(t => t.kind === "video");
-
-  if (!videoTrack) return;
-
-  isCameraOn = !isCameraOn;
-  videoTrack.enabled = isCameraOn;
-
-  btnToggleCamera.textContent = isCameraOn ? "📷 Off" : "📷 On";
-});
-
-/* ================= CAMERA FLIP ================= */
-
-// camera facing state (add ONCE)
-let currentVideoDeviceId = "user";
-
-btnFlipCamera.addEventListener("click", async () => {
-  if (!localVideo || !localVideo.srcObject) return;
-
-  // get active peer connection
-  const pc = [...peerConnections.values()][0];
-  if (!pc) return;
-
-  const videoSender = pc
-    .getSenders()
-    .find(s => s.track && s.track.kind === "video");
-  if (!videoSender) return;
-
-  // stop old video track
-  localVideo.srcObject
-    .getVideoTracks()
-    .forEach(t => t.stop());
-
-  // request opposite camera
-  const newStream = await navigator.mediaDevices.getUserMedia({
-    video: {
-      facingMode: currentVideoDeviceId === "environment"
-        ? "user"
-        : "environment"
-    },
-    audio: true
-  });
-
-  const newVideoTrack = newStream.getVideoTracks()[0];
-  currentVideoDeviceId =
-    newVideoTrack.getSettings().facingMode || currentVideoDeviceId;
-
-  // replace track in WebRTC without reconnect
-  await videoSender.replaceTrack(newVideoTrack);
-
-  // keep audio track
-  const audioTracks = localVideo.srcObject.getAudioTracks();
-  localVideo.srcObject = new MediaStream([
-    newVideoTrack,
-    ...audioTracks
-  ]);
-});
-
 /* ================= ANSWER CALL BUTTON ================= */
 btnAnswer.addEventListener("click", async () => {
   if (!pendingIncomingCall || !currentChatId || !currentUID) return;
