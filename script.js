@@ -19,7 +19,6 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyB1jn36w9rpzskOHZujUIWdFyHAJdNYBMQ",
@@ -43,7 +42,7 @@ const screens = {
   home: document.getElementById("screen-home"),
   search: document.getElementById("screen-search"),
   requests: document.getElementById("screen-requests"),
-  chat: document.getElementById("screen-chat") // ✅ REQUIRED
+  chat: document.getElementById("screen-chat")
 };
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove("active"));
@@ -157,7 +156,27 @@ btnBackChat.onclick = () => {
   showScreen("home");
 };
 
-// 🔁 Universal username renderer with badge
+/* ===============================
+   BADGE HELPERS (FIX)
+   =============================== */
+// Synchronous badge factory — returns an HTMLElement (safe to append)
+function createBadge(type) {
+  const span = document.createElement("span");
+  const t = String(type || "").toLowerCase();
+  span.className = "badge " + t;
+
+  // map type -> visible label/icon
+  const labels = {
+    verified: "✔",
+    vip: "VIP",
+    god: "GOD"
+  };
+
+  span.textContent = labels[t] || String(type);
+  return span;
+}
+
+// 🔁 Universal username renderer with badge (async because it reads DB)
 async function createUsernameNode(uid) {
   const userSnap = await get(ref(db, "users/" + uid));
   const user = userSnap.val();
@@ -166,12 +185,12 @@ async function createUsernameNode(uid) {
   name.textContent = "@" + (user?.username || "unknown");
 
   if (user?.badge) {
+    // createBadge is synchronous so appendChild won't throw
     name.appendChild(createBadge(user.badge));
   }
 
   return name;
 }
-
 
 /* ================= SEARCH ================= */
 searchInput.addEventListener("input", async () => {
@@ -195,8 +214,6 @@ searchInput.addEventListener("input", async () => {
   for (const username in usernames) {
     const uid = usernames[username];
 
-    console.log("CHECK:", username, "QUERY:", query);
-
     if (!username.toLowerCase().includes(query)) continue;
 
     found = true;
@@ -204,10 +221,9 @@ searchInput.addEventListener("input", async () => {
     const row = document.createElement("div");
     row.className = "list-item";
 
-    const name = document.createElement("span");
-    name.textContent = "@" + username;
-
-    row.appendChild(name);
+    // Use the universal renderer so badges show here too
+    const nameNode = await createUsernameNode(uid);
+    row.appendChild(nameNode);
 
     if (uid === currentUID) {
       const you = document.createElement("span");
@@ -237,6 +253,7 @@ searchInput.addEventListener("input", async () => {
     searchResults.innerHTML = `<p class="empty-text">No match found</p>`;
   }
 });
+
 /* ================= REQUESTS ================= */
 function loadRequests() {
   requestList.innerHTML = "";
@@ -259,8 +276,8 @@ function loadRequests() {
       const row = document.createElement("div");
       row.className = "list-item";
 
-      const name = document.createElement("span");
-      name.textContent = "@" + uSnap.val().username;
+      // Use universal renderer (shows badge if any)
+      const name = await createUsernameNode(fromUID);
 
       const accept = document.createElement("button");
       accept.className = "primary-btn";
@@ -271,24 +288,22 @@ function loadRequests() {
       reject.textContent = "Reject";
 
       accept.onclick = async () => {
-  // 1️⃣ Add friends on BOTH sides
-  await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
-  await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
+        // 1️⃣ Add friends on BOTH sides
+        await set(ref(db, `friends/${currentUID}/${fromUID}`), true);
+        await set(ref(db, `friends/${fromUID}/${currentUID}`), true);
 
-  // 2️⃣ Remove requests on BOTH sides (🔥 THIS WAS MISSING)
-  await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
-  await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
+        // 2️⃣ Remove requests on BOTH sides
+        await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
+        await remove(ref(db, `friend_requests/${fromUID}/${currentUID}`));
 
-  // 3️⃣ Switch screen & refresh
-  showScreen("home");
-  loadFriends();
-};
+        // 3️⃣ Switch screen & refresh
+        showScreen("home");
+        loadFriends();
+      };
 
       reject.onclick = async () => {
         await remove(ref(db, `friend_requests/${currentUID}/${fromUID}`));
       };
-
-    
 
       row.appendChild(name);
       row.appendChild(accept);
@@ -323,8 +338,8 @@ function loadFriends() {
       const row = document.createElement("div");
       row.className = "list-item";
 
-      const name = document.createElement("span");
-      name.textContent = "@" + userSnap.val().username;
+      // Create name with badge
+      const nameNode = await createUsernameNode(friendUID);
 
       const removeBtn = document.createElement("button");
       removeBtn.className = "primary-btn";
@@ -335,9 +350,11 @@ function loadFriends() {
         await remove(ref(db, `friends/${friendUID}/${currentUID}`));
       };
 
-      row.onclick = () => openChat(friendUID, userSnap.val().username);
+      // Keep username string for openChat
+      const username = userSnap.val().username || "unknown";
+      row.onclick = () => openChat(friendUID, username);
 
-      row.appendChild(name);
+      row.appendChild(nameNode);
       row.appendChild(removeBtn);
       friendsList.appendChild(row);
     }
