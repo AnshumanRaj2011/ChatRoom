@@ -72,6 +72,8 @@ const chatInput = document.getElementById("chat-input");
 const btnBackChat = document.getElementById("btn-back-chat");
 
 /* ======= VIDEO DOM (added) ======= */
+// ADD near other DOM refs (chatUsername / video DOM refs):
+const btnStartCall = document.getElementById("btn-start-call");
 const videoContainer = document.getElementById("video-container");
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
@@ -201,7 +203,21 @@ btnRequests.onclick = () => {
 };
 btnBackRequests.onclick = () => showScreen("home");
 
-btnBackChat.onclick = () => {
+// REPLACE the existing btnBackChat.onclick with this block
+btnBackChat.onclick = async () => {
+  // If there is an active in-progress call, hang it up first
+  if (activeCallId && currentChatId) {
+    try {
+      // hangupCall cleans PC, local tracks, listeners and removes DB call node
+      await hangupCall(db, currentChatId, activeCallId);
+    } catch (e) {
+      console.error("Failed to hang up active call on back:", e);
+    } finally {
+      activeCallId = null;
+    }
+  }
+
+  // detach messages listener
   if (chatListenerRef) off(chatListenerRef);
   chatListenerRef = null;
   currentChatUID = null;
@@ -209,15 +225,46 @@ btnBackChat.onclick = () => {
 
   // detach incoming call listener for this chat
   if (incomingCallDetach) {
-    try { incomingCallDetach(); } catch (e) {}
+    try { incomingCallDetach(); } catch (e) { console.error(e); }
     incomingCallDetach = null;
   }
 
-  // Reset video UI
+  // Reset video UI (stops media elements, hides container)
   resetVideoUI();
+
+  // Re-enable start-call button if disabled
+  if (btnStartCall) btnStartCall.disabled = false;
 
   showScreen("home");
 };
+
+// Visible top-bar Call button (starts a call)
+btnStartCall?.addEventListener("click", async () => {
+  if (!currentUID || !currentChatUID || !currentChatId) {
+    alert("Open a chat to start a call.");
+    return;
+  }
+
+  // Show video UI and disable the start-call button while dialing
+  showVideoUI(true);
+  btnStartCall.disabled = true;
+  btnCall.disabled = true; // keep internal consistency
+
+  try {
+    const { callId } = await startCall(db, currentChatId, currentUID, currentChatUID, {
+      localVideoEl: localVideo,
+      remoteVideoEl: remoteVideo
+    });
+    activeCallId = callId;
+    btnHangup.disabled = false;
+  } catch (err) {
+    console.error("startCall (btnStartCall) failed:", err);
+    alert("Failed to start call.");
+    // restore UI
+    btnStartCall.disabled = false;
+    resetVideoUI();
+  }
+});
 
 /* ===============================
    BADGE HELPERS (UNCHANGED)
