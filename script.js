@@ -125,6 +125,36 @@ onAuthStateChanged(auth, async user => {
 
   currentUID = user.uid;
 
+  let globalCallListenerRef = null;
+
+function startGlobalIncomingCallListener() {
+  if (!currentUID) return;
+
+  const refPath = ref(db, `userCalls/${currentUID}`);
+
+  globalCallListenerRef = refPath;
+
+  onValue(refPath, snap => {
+    if (!snap.exists()) return;
+
+    snap.forEach(child => {
+      const callId = child.key;
+      const data = child.val();
+
+      // Prevent duplicate handling
+      if (pendingIncomingCall || activeCallId) return;
+
+      pendingIncomingCall = {
+        callId,
+        fromUid: data.fromUid,
+        chatId: data.chatId
+      };
+
+      showIncomingCallUI(pendingIncomingCall);
+    });
+  });
+}
+
   // Subscribe to user's badge in order to detect GOD quickly and update UI
   badgeListenerRef = ref(db, "users/" + currentUID + "/badge");
   onValue(badgeListenerRef, async snap => {
