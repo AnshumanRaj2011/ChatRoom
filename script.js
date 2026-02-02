@@ -643,23 +643,7 @@ function openChat(friendUID, username) {
   });
 
   // Setup incoming call listener for this chat
-  if (incomingCallDetach) {
-    try { incomingCallDetach(); } catch (e) {}
-    incomingCallDetach = null;
-  }
-  incomingCallDetach = listenForIncomingCalls(db, chatId, currentUID, async ({ callId, offer, fromUid }) => {
-    if (activeCallId) {
-      // ignore incoming if already in a call
-      return;
-    }
-    pendingIncomingCall = { callId, fromUid };
-    btnAnswer.disabled = false;
-    btnStartCall.disabled = true;
-    showVideoUI(true);
-
-    // Optionally fetch caller username and show in UI (left as improvement)
-    // You can use createUsernameNode(fromUid) to show name.
-  });
+  
 }
 
 /* ================= SEND MESSAGE ================= */
@@ -796,7 +780,11 @@ await set(
   // listen for answer
   const ansRef = answerRef(dbInstance, chatId, callId);
   const ansListener = async snap => {
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+  pendingIncomingCall = null;
+  hideIncomingCallUI();
+  return;
+    }
     const a = snap.val();
     if (a && a.sdp) {
       const remoteDesc = { type: a.type || "answer", sdp: a.sdp };
