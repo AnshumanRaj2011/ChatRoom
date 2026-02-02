@@ -184,6 +184,7 @@ function startGlobalIncomingCallListener() {
   } else {
     showScreen("username");
   }
+  startGlobalIncomingCallListener();
 });
 
 /* ================= USERNAME ================= */
@@ -217,6 +218,7 @@ logoutBtn.onclick = async () => {
   await signOut(auth);
   showScreen("login");
   currentChatId = null;
+  if (globalCallListenerRef) off(globalCallListenerRef);
 };
 
 /* ================= NAV ================= */
@@ -781,6 +783,16 @@ export async function startCall(dbInstance, chatId, callerUid, calleeUid, ctx) {
     timestamp: Date.now()
   });
 
+  // 🔔 Global incoming call notification
+await set(
+  ref(dbInstance, `userCalls/${calleeUid}/${callId}`),
+  {
+    chatId,
+    fromUid: callerUid,
+    time: Date.now()
+  }
+);
+
   // listen for answer
   const ansRef = answerRef(dbInstance, chatId, callId);
   const ansListener = async snap => {
@@ -938,6 +950,63 @@ function hideIncomingCallUI() {
 
   incomingPopup.classList.add("hidden");
 }
+
+/* ================= INCOMING CALL ACTIONS ================= */
+
+btnAcceptCall.onclick = async () => {
+  if (!pendingIncomingCall || !currentUID) return;
+
+  hideIncomingCallUI();
+  showVideoUI(true);
+
+  currentChatId = pendingIncomingCall.chatId;
+
+  try {
+    await answerCall(
+      db,
+      pendingIncomingCall.chatId,
+      pendingIncomingCall.callId,
+      currentUID,
+      {
+        localVideoEl: localVideo,
+        remoteVideoEl: remoteVideo
+      }
+    );
+
+    activeCallId = pendingIncomingCall.callId;
+
+    // cleanup notification
+    await remove(ref(db, `userCalls/${currentUID}/${activeCallId}`));
+
+    pendingIncomingCall = null;
+    btnHangup.disabled = false;
+  } catch (e) {
+    console.error("Failed to accept call:", e);
+    resetVideoUI();
+  }
+};
+
+btnRejectCall.onclick = async () => {
+  if (!pendingIncomingCall) return;
+
+  try {
+    await hangupCall(
+      db,
+      pendingIncomingCall.chatId,
+      pendingIncomingCall.callId
+    );
+
+    await remove(
+      ref(db, `userCalls/${currentUID}/${pendingIncomingCall.callId}`)
+    );
+  } catch (e) {
+    console.error("Reject call failed:", e);
+  } finally {
+    pendingIncomingCall = null;
+    hideIncomingCallUI();
+  }
+};
+
 /* ================= ANSWER CALL BUTTON ================= */
 btnAnswer.addEventListener("click", async () => {
   if (!pendingIncomingCall || !currentChatId || !currentUID) return;
