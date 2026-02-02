@@ -286,6 +286,10 @@ btnStartCall.addEventListener("click", async () => {
   btnStartCall.disabled = true;
   showVideoUI(true);
 
+  // set video labels
+if (localNameEl) localNameEl.textContent = chatUsername.textContent || "You";
+if (remoteNameEl) remoteNameEl.textContent = "Calling…";
+
   try {
     const { callId } = await startCall(
       db,
@@ -947,6 +951,9 @@ btnAcceptCall.onclick = async () => {
 
   hideIncomingCallUI();
   showVideoUI(true);
+
+  if (localNameEl) localNameEl.textContent = "You";
+if (remoteNameEl) remoteNameEl.textContent = "@" + pendingIncomingCall.fromUid;
 
   currentChatId = pendingIncomingCall.chatId;
 
