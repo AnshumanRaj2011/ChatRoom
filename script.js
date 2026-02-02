@@ -81,9 +81,6 @@ const remoteVideo = document.getElementById("remoteVideo");
 const btnAnswer = document.getElementById("btn-answer");
 const btnHangup = document.getElementById("btn-hangup");
 
-const localNameEl = document.getElementById("local-name");
-const remoteNameEl = document.getElementById("remote-name");
-
 /* ================= STATE ================= */
 let currentUID = null;
 let friendsListenerRef = null;
@@ -99,9 +96,9 @@ let currentUserBadge = null; // normalized lowercase string or null
 let currentChatId = null;
 
 /* ======= Video call state ======= */
+let incomingCallDetach = null;
 let pendingIncomingCall = null; // { callId, fromUid }
 let activeCallId = null;
-let globalCallListenerRef = null;
 
 /* ================= START ================= */
 showScreen("login");
@@ -127,38 +124,6 @@ onAuthStateChanged(auth, async user => {
   }
 
   currentUID = user.uid;
-
-function startGlobalIncomingCallListener() {
-  if (!currentUID) return;
-
-  const refPath = ref(db, `userCalls/${currentUID}`);
-
-  globalCallListenerRef = refPath;
-
-  onValue(refPath, snap => {
-    if (!snap.exists()) {
-  pendingIncomingCall = null;
-  hideIncomingCallUI();
-  return;
-    }
-
-    snap.forEach(child => {
-      const callId = child.key;
-      const data = child.val();
-
-      // Prevent duplicate handling
-      if (pendingIncomingCall || activeCallId) return;
-
-      pendingIncomingCall = {
-        callId,
-        fromUid: data.fromUid,
-        chatId: data.chatId
-      };
-
-      showIncomingCallUI(pendingIncomingCall);
-    });
-  });
-}
 
   // Subscribe to user's badge in order to detect GOD quickly and update UI
   badgeListenerRef = ref(db, "users/" + currentUID + "/badge");
@@ -189,7 +154,6 @@ function startGlobalIncomingCallListener() {
   } else {
     showScreen("username");
   }
-  startGlobalIncomingCallListener();
 });
 
 /* ================= USERNAME ================= */
@@ -223,7 +187,6 @@ logoutBtn.onclick = async () => {
   await signOut(auth);
   showScreen("login");
   currentChatId = null;
-  if (globalCallListenerRef) off(globalCallListenerRef);
 };
 
 /* ================= NAV ================= */
@@ -285,10 +248,6 @@ btnStartCall.addEventListener("click", async () => {
 
   btnStartCall.disabled = true;
   showVideoUI(true);
-
-  // set video labels
-if (localNameEl) localNameEl.textContent = chatUsername.textContent || "You";
-if (remoteNameEl) remoteNameEl.textContent = "Calling…";
 
   try {
     const { callId } = await startCall(
@@ -652,7 +611,23 @@ function openChat(friendUID, username) {
   });
 
   // Setup incoming call listener for this chat
-  
+  if (incomingCallDetach) {
+    try { incomingCallDetach(); } catch (e) {}
+    incomingCallDetach = null;
+  }
+  incomingCallDetach = listenForIncomingCalls(db, chatId, currentUID, async ({ callId, offer, fromUid }) => {
+    if (activeCallId) {
+      // ignore incoming if already in a call
+      return;
+    }
+    pendingIncomingCall = { callId, fromUid };
+    btnAnswer.disabled = false;
+    btnStartCall.disabled = true;
+    showVideoUI(true);
+
+    // Optionally fetch caller username and show in UI (left as improvement)
+    // You can use createUsernameNode(fromUid) to show name.
+  });
 }
 
 /* ================= SEND MESSAGE ================= */
@@ -775,16 +750,6 @@ export async function startCall(dbInstance, chatId, callerUid, calleeUid, ctx) {
     calleeUid: calleeUid || null,
     timestamp: Date.now()
   });
-
-  // 🔔 Global incoming call notification
-await set(
-  ref(dbInstance, `userCalls/${calleeUid}/${callId}`),
-  {
-    chatId,
-    fromUid: callerUid,
-    time: Date.now()
-  }
-);
 
   // listen for answer
   const ansRef = answerRef(dbInstance, chatId, callId);
@@ -923,90 +888,6 @@ function resetVideoUI() {
     }
   } catch (e) {}
 }
-
-/* ================= INCOMING CALL POPUP UI ================= */
-
-const incomingPopup = document.getElementById("incoming-call-popup");
-const incomingText = document.getElementById("incoming-call-text");
-const btnAcceptCall = document.getElementById("btn-accept-call");
-const btnRejectCall = document.getElementById("btn-reject-call");
-
-function showIncomingCallUI(call) {
-  if (!incomingPopup) return;
-
-  incomingText.textContent = "Incoming call";
-  incomingPopup.classList.remove("hidden");
-}
-
-function hideIncomingCallUI() {
-  if (!incomingPopup) return;
-
-  incomingPopup.classList.add("hidden");
-}
-
-/* ================= INCOMING CALL ACTIONS ================= */
-
-btnAcceptCall.onclick = async () => {
-  if (!pendingIncomingCall || !currentUID) return;
-
-  hideIncomingCallUI();
-  showVideoUI(true);
-
-  if (localNameEl) localNameEl.textContent = "You";
-const userSnap = await get(ref(db, "users/" + pendingIncomingCall.fromUid));
-const username = userSnap.exists()
-  ? "@" + userSnap.val().username
-  : "Unknown";
-
-if (remoteNameEl) remoteNameEl.textContent = username;
-  currentChatId = pendingIncomingCall.chatId;
-
-  try {
-    await answerCall(
-      db,
-      pendingIncomingCall.chatId,
-      pendingIncomingCall.callId,
-      currentUID,
-      {
-        localVideoEl: localVideo,
-        remoteVideoEl: remoteVideo
-      }
-    );
-
-    activeCallId = pendingIncomingCall.callId;
-
-    // cleanup notification
-    await remove(ref(db, `userCalls/${currentUID}/${activeCallId}`));
-
-    pendingIncomingCall = null;
-    btnHangup.disabled = false;
-  } catch (e) {
-    console.error("Failed to accept call:", e);
-    resetVideoUI();
-  }
-};
-
-btnRejectCall.onclick = async () => {
-  if (!pendingIncomingCall) return;
-
-  try {
-    await hangupCall(
-      db,
-      pendingIncomingCall.chatId,
-      pendingIncomingCall.callId
-    );
-
-    await remove(
-      ref(db, `userCalls/${currentUID}/${pendingIncomingCall.callId}`)
-    );
-  } catch (e) {
-    console.error("Reject call failed:", e);
-  } finally {
-    pendingIncomingCall = null;
-    hideIncomingCallUI();
-  }
-};
-
 /* ================= ANSWER CALL BUTTON ================= */
 btnAnswer.addEventListener("click", async () => {
   if (!pendingIncomingCall || !currentChatId || !currentUID) return;
