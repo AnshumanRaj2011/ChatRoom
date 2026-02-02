@@ -953,8 +953,12 @@ btnAcceptCall.onclick = async () => {
   showVideoUI(true);
 
   if (localNameEl) localNameEl.textContent = "You";
-if (remoteNameEl) remoteNameEl.textContent = "@" + pendingIncomingCall.fromUid;
+const userSnap = await get(ref(db, "users/" + pendingIncomingCall.fromUid));
+const username = userSnap.exists()
+  ? "@" + userSnap.val().username
+  : "Unknown";
 
+if (remoteNameEl) remoteNameEl.textContent = username;
   currentChatId = pendingIncomingCall.chatId;
 
   try {
