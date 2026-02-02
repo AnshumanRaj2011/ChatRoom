@@ -1,83 +1,104 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ChatRoom</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <main class="app">
 
-<!-- LOGIN -->
-<div id="screen-login" class="screen active">
-  <div class="center-box">
-    <h1>ChatRoom</h1>
-    <button id="google-login-btn" class="primary-btn">
-      Login with Google
-    </button>
-  </div>
-</div>
+    <!-- LOGIN -->
+    <section id="screen-login" class="screen active">
+      <h1>Welcome to ChatRoom</h1>
+      <button id="google-login-btn" class="primary-btn">Sign in with Google</button>
+    </section>
 
-<!-- USERNAME -->
-<div id="screen-username" class="screen">
-  <div class="center-box">
-    <h2>Create Username</h2>
-    <input id="username-input" placeholder="username (no spaces)" />
-    <button id="save-username-btn" class="primary-btn">Continue</button>
-  </div>
-</div>
+    <!-- USERNAME -->
+    <section id="screen-username" class="screen">
+      <h2>Create a username</h2>
+      <div class="form-row">
+        <input id="username-input" placeholder="username (letters, numbers, _)" />
+        <button id="save-username-btn" class="primary-btn">Save</button>
+      </div>
+      <p class="hint">Lowercase, 3+ chars. Letters, numbers and underscore only.</p>
+    </section>
 
-<!-- HOME (🔥 FIXED) -->
-<!-- HOME -->
-<div id="screen-home" class="screen">
-  <div class="top-bar">
-    <h3>Friends</h3>
-    <div class="top-actions">
-      <button id="btn-search">＋</button>
-      <button id="btn-requests">🔔</button>
-      <button id="btn-logout">Logout</button>
-    </div>
-  </div>
+    <!-- HOME -->
+    <section id="screen-home" class="screen">
+      <header class="topbar">
+        <div class="left">
+          <button id="btn-search" class="nav-btn">Search</button>
+          <button id="btn-requests" class="nav-btn" aria-haspopup="true" aria-controls="screen-requests">
+            Requests
+            <!-- badge element (JS expects this id) -->
+            <span id="requests-badge" class="badge" aria-hidden="true" hidden></span>
+          </button>
+        </div>
+        <div class="right">
+          <button id="btn-logout" class="danger-btn">Logout</button>
+        </div>
+      </header>
 
-  <div id="friends-list" class="list"></div>
-</div>
+      <section class="content">
+        <h3>Your friends</h3>
+        <div id="friends-list" class="list">
+          <p class="empty-text">No friends yet</p>
+        </div>
+      </section>
+    </section>
 
-<!-- SEARCH -->
-<div id="screen-search" class="screen">
-  <div class="top-bar">
-    <button id="btn-back-search">←</button>
-    <h3>Search</h3>
-  </div>
+    <!-- SEARCH -->
+    <section id="screen-search" class="screen">
+      <header class="screen-header">
+        <button id="btn-back-search" class="nav-btn">Back</button>
+        <h2>Search users</h2>
+      </header>
 
-  <input id="search-input" placeholder="Search username" />
-  <div id="search-results" class="list"></div>
-</div>
+      <section class="content">
+        <input id="search-input" placeholder="Type username to search..." />
+        <div id="search-results" class="list">
+          <p class="empty-text">Type a username</p>
+        </div>
+      </section>
+    </section>
 
-<!-- REQUESTS -->
-<div id="screen-requests" class="screen">
-  <div class="top-bar">
-    <button id="btn-back-requests">←</button>
-    <h3>Friend Requests</h3>
-  </div>
+    <!-- REQUESTS -->
+    <section id="screen-requests" class="screen">
+      <header class="screen-header">
+        <button id="btn-back-requests" class="nav-btn">Back</button>
+        <h2>Friend requests</h2>
+      </header>
 
-  <div id="request-list" class="list"></div>
-</div>
+      <section class="content">
+        <div id="request-list" class="list">
+          <p class="empty-text">No requests</p>
+        </div>
+      </section>
+    </section>
 
-  <!-- CHAT -->
-<div id="screen-chat" class="screen">
-  <div class="top-bar">
-    <button id="btn-back-chat">←</button>
-    <h3 id="chat-username"></h3>
-  </div>
+    <!-- CHAT -->
+    <section id="screen-chat" class="screen">
+      <header class="screen-header">
+        <button id="btn-back-chat" class="nav-btn">Back</button>
+        <h2 id="chat-username">@username</h2>
+      </header>
 
-  <div id="chat-messages" class="list chat-list"></div>
+      <section class="content chat-content">
+        <div id="chat-messages" class="chat-messages">
+          <!-- messages appended here -->
+        </div>
 
-  <form id="chat-form" class="chat-form">
-    <input id="chat-input" placeholder="Type a message…" />
-    <button type="submit">Send</button>
-  </form>
-</div>
+        <form id="chat-form" class="chat-form">
+          <input id="chat-input" placeholder="Type a message..." autocomplete="off" />
+          <button type="submit" class="primary-btn">Send</button>
+        </form>
+      </section>
+    </section>
 
-<script type="module" src="script.js"></script>
+  </main>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>
