@@ -64,13 +64,19 @@
 
 <!-- ================= CHAT ================= -->
 <div id="screen-chat" class="screen">
-  <div class="top-bar">
-    <!-- 🔥 REQUIRED BACK BUTTON -->
-    <button id="btn-back-chat">⬅</button>
+  <!-- Replace the existing top-bar inside #screen-chat with this (or insert the button inside it) -->
+<div class="top-bar">
+  <!-- BACK BUTTON -->
+  <button id="btn-back-chat">⬅</button>
 
-    <!-- 🔥 CHAT USERNAME -->
-    <div id="chat-username"></div>
+  <!-- CHAT USERNAME -->
+  <div id="chat-username" style="flex:1;"></div>
+
+  <!-- VISIBLE CALL BUTTON (added) -->
+  <div class="top-actions">
+    <button id="btn-start-call" class="primary-btn">📞 Call</button>
   </div>
+</div>
 
   <!-- VIDEO UI (added) -->
   <div id="video-container" class="video-container hidden">
