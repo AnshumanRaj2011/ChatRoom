@@ -217,6 +217,28 @@ btnBackChat.onclick = async () => {
     }
   }
 
+
+  // detach messages listener
+  if (chatListenerRef) off(chatListenerRef);
+  chatListenerRef = null;
+  currentChatUID = null;
+  currentChatId = null;
+
+  // detach incoming call listener for this chat
+  if (incomingCallDetach) {
+    try { incomingCallDetach(); } catch (e) { console.error(e); }
+    incomingCallDetach = null;
+  }
+
+  // Reset video UI (stops media elements, hides container)
+  resetVideoUI();
+
+  // Re-enable start-call button if disabled
+  if (btnStartCall) btnStartCall.disabled = false;
+
+  showScreen("home");
+};
+
   /* ================= START CALL BUTTON ================= */
 btnStartCall.addEventListener("click", async () => {
   if (!currentUID || !currentChatUID || !currentChatId) {
@@ -248,28 +270,6 @@ btnStartCall.addEventListener("click", async () => {
     alert("Failed to start call");
   }
 });
-
-  // detach messages listener
-  if (chatListenerRef) off(chatListenerRef);
-  chatListenerRef = null;
-  currentChatUID = null;
-  currentChatId = null;
-
-  // detach incoming call listener for this chat
-  if (incomingCallDetach) {
-    try { incomingCallDetach(); } catch (e) { console.error(e); }
-    incomingCallDetach = null;
-  }
-
-  // Reset video UI (stops media elements, hides container)
-  resetVideoUI();
-
-  // Re-enable start-call button if disabled
-  if (btnStartCall) btnStartCall.disabled = false;
-
-  showScreen("home");
-};
-
 
 
 /* ===============================
