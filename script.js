@@ -96,7 +96,6 @@ let currentUserBadge = null; // normalized lowercase string or null
 let currentChatId = null;
 
 /* ======= Video call state ======= */
-let incomingCallDetach = null;
 let pendingIncomingCall = null; // { callId, fromUid }
 let activeCallId = null;
 let globalCallListenerRef = null;
@@ -134,7 +133,11 @@ function startGlobalIncomingCallListener() {
   globalCallListenerRef = refPath;
 
   onValue(refPath, snap => {
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+  pendingIncomingCall = null;
+  hideIncomingCallUI();
+  return;
+    }
 
     snap.forEach(child => {
       const callId = child.key;
