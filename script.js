@@ -780,11 +780,7 @@ await set(
   // listen for answer
   const ansRef = answerRef(dbInstance, chatId, callId);
   const ansListener = async snap => {
-    if (!snap.exists()) {
-  pendingIncomingCall = null;
-  hideIncomingCallUI();
-  return;
-    }
+    if (!snap.exists()) return;
     const a = snap.val();
     if (a && a.sdp) {
       const remoteDesc = { type: a.type || "answer", sdp: a.sdp };
