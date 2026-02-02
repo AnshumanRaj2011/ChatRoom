@@ -71,6 +71,14 @@ const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const btnBackChat = document.getElementById("btn-back-chat");
 
+/* ======= VIDEO DOM (added) ======= */
+const videoContainer = document.getElementById("video-container");
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+const btnCall = document.getElementById("btn-call");
+const btnAnswer = document.getElementById("btn-answer");
+const btnHangup = document.getElementById("btn-hangup");
+
 /* ================= STATE ================= */
 let currentUID = null;
 let friendsListenerRef = null;
@@ -84,6 +92,11 @@ let chatListenerRef = null;
 let badgeListenerRef = null;
 let currentUserBadge = null; // normalized lowercase string or null
 let currentChatId = null;
+
+/* ======= Video call state ======= */
+let incomingCallDetach = null;
+let pendingIncomingCall = null; // { callId, fromUid }
+let activeCallId = null;
 
 /* ================= START ================= */
 showScreen("login");
@@ -168,6 +181,7 @@ logoutBtn.onclick = async () => {
   if (requestsListenerRef) off(requestsListenerRef);
   if (chatListenerRef) off(chatListenerRef);
   if (badgeListenerRef) off(badgeListenerRef);
+  if (incomingCallDetach) { try { incomingCallDetach(); } catch(e){} incomingCallDetach = null; }
   await signOut(auth);
   showScreen("login");
   currentChatId = null;
@@ -192,6 +206,16 @@ btnBackChat.onclick = () => {
   chatListenerRef = null;
   currentChatUID = null;
   currentChatId = null;
+
+  // detach incoming call listener for this chat
+  if (incomingCallDetach) {
+    try { incomingCallDetach(); } catch (e) {}
+    incomingCallDetach = null;
+  }
+
+  // Reset video UI
+  resetVideoUI();
+
   showScreen("home");
 };
 
@@ -216,7 +240,6 @@ function createBadge(type) {
 }
 
 // 🔁 Universal username renderer with badge (async because it reads DB)
-// (left intact so badges show across the UI)
 async function createUsernameNode(uid) {
   const userSnap = await get(ref(db, "users/" + uid));
   const user = userSnap.val();
@@ -525,7 +548,6 @@ function openChat(friendUID, username) {
 
   if (chatListenerRef) off(chatListenerRef);
 
-  // Listen for changes and render using the async renderer
   chatListenerRef = ref(db, "chats/" + chatId + "/messages");
   onValue(chatListenerRef, async snap => {
     try {
@@ -533,6 +555,25 @@ function openChat(friendUID, username) {
     } catch (err) {
       console.error("Failed rendering chat messages:", err);
     }
+  });
+
+  // Setup incoming call listener for this chat
+  if (incomingCallDetach) {
+    try { incomingCallDetach(); } catch (e) {}
+    incomingCallDetach = null;
+  }
+  incomingCallDetach = listenForIncomingCalls(db, chatId, currentUID, async ({ callId, offer, fromUid }) => {
+    if (activeCallId) {
+      // ignore incoming if already in a call
+      return;
+    }
+    pendingIncomingCall = { callId, fromUid };
+    btnAnswer.disabled = false;
+    btnCall.disabled = true;
+    showVideoUI(true);
+
+    // Optionally fetch caller username and show in UI (left as improvement)
+    // You can use createUsernameNode(fromUid) to show name.
   });
 }
 
@@ -555,3 +596,279 @@ chatForm.onsubmit = async e => {
 
   chatInput.value = "";
 };
+
+/* ================= Video call implementation (integrated) ================= */
+
+/*
+ Signaling layout:
+ chats/{chatId}/calls/{callId}/offer
+                                   /answer
+                                   /candidates/caller/{pushId}
+                                                     /callee/{pushId}
+*/
+
+const STUN_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+const ICE_CONFIG = { iceServers: STUN_SERVERS };
+
+// Internal state
+const localStreams = new Map();
+const peerConnections = new Map();
+const dbListeners = new Map();
+
+function callsRef(dbInstance, chatId) { return ref(dbInstance, `chats/${chatId}/calls`); }
+function callRef(dbInstance, chatId, callId) { return ref(dbInstance, `chats/${chatId}/calls/${callId}`); }
+function offerRef(dbInstance, chatId, callId) { return ref(dbInstance, `chats/${chatId}/calls/${callId}/offer`); }
+function answerRef(dbInstance, chatId, callId) { return ref(dbInstance, `chats/${chatId}/calls/${callId}/answer`); }
+function candidatesRef(dbInstance, chatId, callId, side) { return ref(dbInstance, `chats/${chatId}/calls/${callId}/candidates/${side}`); }
+
+/* Listen for incoming calls in a chat */
+export function listenForIncomingCalls(dbInstance, chatId, currentUid, onIncoming) {
+  const root = callsRef(dbInstance, chatId);
+  const listener = snapshot => {
+    if (!snapshot.exists()) return;
+    snapshot.forEach(child => {
+      const callId = child.key;
+      const callObj = child.val();
+      if (callObj && callObj.offer && !callObj.answer) {
+        const offer = callObj.offer;
+        if (offer.uid && offer.uid !== currentUid) {
+          onIncoming({ callId, offer, fromUid: offer.uid, timestamp: offer.timestamp || Date.now() });
+        }
+      }
+    });
+  };
+  onValue(root, listener);
+  return () => off(root, "value", listener);
+}
+
+/* Start a call (caller) */
+export async function startCall(dbInstance, chatId, callerUid, calleeUid, ctx) {
+  const { localVideoEl, remoteVideoEl } = ctx || {};
+  const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+  if (localVideoEl) {
+    localVideoEl.srcObject = localStream;
+    localVideoEl.muted = true;
+    localVideoEl.play().catch(()=>{});
+  }
+
+  const pc = new RTCPeerConnection(ICE_CONFIG);
+  const callId = push(callsRef(dbInstance, chatId)).key;
+
+  localStreams.set(callId, localStream);
+  peerConnections.set(callId, pc);
+  dbListeners.set(callId, []);
+
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  const remoteStream = new MediaStream();
+  if (remoteVideoEl) {
+    remoteVideoEl.srcObject = remoteStream;
+    remoteVideoEl.play().catch(()=>{});
+  }
+  pc.ontrack = event => {
+    event.streams.forEach(s => s.getTracks().forEach(t => remoteStream.addTrack(t)));
+  };
+
+  pc.onicecandidate = event => {
+    if (!event.candidate) return;
+    const cRef = candidatesRef(dbInstance, chatId, callId, "caller");
+    push(cRef).then(p => set(p, event.candidate.toJSON())).catch(console.error);
+  };
+
+  const offerDesc = await pc.createOffer();
+  await pc.setLocalDescription(offerDesc);
+
+  await set(offerRef(dbInstance, chatId, callId), {
+    sdp: offerDesc.sdp,
+    type: offerDesc.type,
+    uid: callerUid,
+    calleeUid: calleeUid || null,
+    timestamp: Date.now()
+  });
+
+  // listen for answer
+  const ansRef = answerRef(dbInstance, chatId, callId);
+  const ansListener = async snap => {
+    if (!snap.exists()) return;
+    const a = snap.val();
+    if (a && a.sdp) {
+      const remoteDesc = { type: a.type || "answer", sdp: a.sdp };
+      await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
+    }
+  };
+  onValue(ansRef, ansListener);
+  dbListeners.get(callId).push({ ref: ansRef, listener: ansListener });
+
+  // listen for callee ICE
+  const calleeCandidatesRef = candidatesRef(dbInstance, chatId, callId, "callee");
+  const calleeListener = snap => {
+    if (!snap.exists()) return;
+    snap.forEach(child => {
+      const cand = child.val();
+      if (cand) pc.addIceCandidate(new RTCIceCandidate(cand)).catch(console.error);
+    });
+  };
+  onValue(calleeCandidatesRef, calleeListener);
+  dbListeners.get(callId).push({ ref: calleeCandidatesRef, listener: calleeListener });
+
+  return { callId };
+}
+
+/* Answer a call (callee) */
+export async function answerCall(dbInstance, chatId, callId, calleeUid, ctx) {
+  const { localVideoEl, remoteVideoEl } = ctx || {};
+  const localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+  if (localVideoEl) {
+    localVideoEl.srcObject = localStream;
+    localVideoEl.muted = true;
+    localVideoEl.play().catch(()=>{});
+  }
+
+  const pc = new RTCPeerConnection(ICE_CONFIG);
+  localStreams.set(callId, localStream);
+  peerConnections.set(callId, pc);
+  dbListeners.set(callId, []);
+
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  const remoteStream = new MediaStream();
+  if (remoteVideoEl) {
+    remoteVideoEl.srcObject = remoteStream;
+    remoteVideoEl.play().catch(()=>{});
+  }
+  pc.ontrack = event => {
+    event.streams.forEach(s => s.getTracks().forEach(t => remoteStream.addTrack(t)));
+  };
+
+  pc.onicecandidate = event => {
+    if (!event.candidate) return;
+    const cRef = candidatesRef(dbInstance, chatId, callId, "callee");
+    push(cRef).then(p => set(p, event.candidate.toJSON())).catch(console.error);
+  };
+
+  // read offer once
+  const offerSnap = await get(offerRef(dbInstance, chatId, callId));
+  if (!offerSnap.exists()) throw new Error("Offer not found");
+  const offer = offerSnap.val();
+  const offerDesc = { type: offer.type || "offer", sdp: offer.sdp };
+  await pc.setRemoteDescription(new RTCSessionDescription(offerDesc));
+
+  const answerDesc = await pc.createAnswer();
+  await pc.setLocalDescription(answerDesc);
+
+  await set(answerRef(dbInstance, chatId, callId), {
+    sdp: answerDesc.sdp,
+    type: answerDesc.type,
+    uid: calleeUid,
+    timestamp: Date.now()
+  });
+
+  // listen for caller candidates
+  const callerCandidatesRef = candidatesRef(dbInstance, chatId, callId, "caller");
+  const callerListener = snap => {
+    if (!snap.exists()) return;
+    snap.forEach(child => {
+      const cand = child.val();
+      if (cand) pc.addIceCandidate(new RTCIceCandidate(cand)).catch(console.error);
+    });
+  };
+  onValue(callerCandidatesRef, callerListener);
+  dbListeners.get(callId).push({ ref: callerCandidatesRef, listener: callerListener });
+
+  return { callId };
+}
+
+/* Hangup & cleanup */
+export async function hangupCall(dbInstance, chatId, callId) {
+  const pc = peerConnections.get(callId);
+  if (pc) { try { pc.close(); } catch(e){} peerConnections.delete(callId); }
+
+  const s = localStreams.get(callId);
+  if (s) { s.getTracks().forEach(t => t.stop()); localStreams.delete(callId); }
+
+  const listeners = dbListeners.get(callId) || [];
+  for (const { ref: r, listener } of listeners) {
+    try { off(r, "value", listener); } catch (e) {}
+  }
+  dbListeners.delete(callId);
+
+  try { await remove(callRef(dbInstance, chatId, callId)); } catch (err) { console.error("Failed to remove call node:", err); }
+}
+
+/* ================= Video UI helpers and wiring (client-side) ================= */
+
+function showVideoUI(show) {
+  if (!videoContainer) return;
+  videoContainer.classList.toggle("hidden", !show);
+}
+
+function resetVideoUI() {
+  showVideoUI(false);
+  btnCall.disabled = false;
+  btnAnswer.disabled = true;
+  btnHangup.disabled = true;
+  pendingIncomingCall = null;
+  activeCallId = null;
+  try { if (localVideo) { localVideo.pause(); localVideo.srcObject = null; } } catch(e){}
+  try { if (remoteVideo) { remoteVideo.pause(); remoteVideo.srcObject = null; } } catch(e){}
+}
+
+/* Button handlers */
+btnCall?.addEventListener("click", async () => {
+  if (!currentUID || !currentChatUID) return;
+  btnCall.disabled = true;
+  showVideoUI(true);
+  const chatId = currentChatId;
+  try {
+    const { callId } = await startCall(db, chatId, currentUID, currentChatUID, {
+      localVideoEl: localVideo,
+      remoteVideoEl: remoteVideo
+    });
+    activeCallId = callId;
+    btnHangup.disabled = false;
+  } catch (err) {
+    console.error("startCall failed:", err);
+    alert("Failed to start call.");
+    resetVideoUI();
+  }
+});
+
+btnAnswer?.addEventListener("click", async () => {
+  if (!pendingIncomingCall || !currentUID) return;
+  btnAnswer.disabled = true;
+  showVideoUI(true);
+  const { callId } = pendingIncomingCall;
+  try {
+    await answerCall(db, currentChatId, callId, currentUID, {
+      localVideoEl: localVideo,
+      remoteVideoEl: remoteVideo
+    });
+    activeCallId = callId;
+    pendingIncomingCall = null;
+    btnHangup.disabled = false;
+  } catch (err) {
+    console.error("answerCall failed:", err);
+    alert("Failed to answer call.");
+    resetVideoUI();
+  }
+});
+
+btnHangup?.addEventListener("click", async () => {
+  if (!activeCallId) {
+    if (pendingIncomingCall) {
+      try { await hangupCall(db, currentChatId, pendingIncomingCall.callId); } catch(e){ console.error(e); }
+      pendingIncomingCall = null;
+    }
+    resetVideoUI();
+    return;
+  }
+  try {
+    await hangupCall(db, currentChatId, activeCallId);
+  } catch (err) {
+    console.error("hangupCall failed:", err);
+  } finally {
+    resetVideoUI();
+  }
+});
+
+/* ================= End of file ================= */
