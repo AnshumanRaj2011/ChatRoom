@@ -918,6 +918,26 @@ function resetVideoUI() {
     }
   } catch (e) {}
 }
+
+/* ================= INCOMING CALL POPUP UI ================= */
+
+const incomingPopup = document.getElementById("incoming-call-popup");
+const incomingText = document.getElementById("incoming-call-text");
+const btnAcceptCall = document.getElementById("btn-accept-call");
+const btnRejectCall = document.getElementById("btn-reject-call");
+
+function showIncomingCallUI(call) {
+  if (!incomingPopup) return;
+
+  incomingText.textContent = "Incoming call";
+  incomingPopup.classList.remove("hidden");
+}
+
+function hideIncomingCallUI() {
+  if (!incomingPopup) return;
+
+  incomingPopup.classList.add("hidden");
+}
 /* ================= ANSWER CALL BUTTON ================= */
 btnAnswer.addEventListener("click", async () => {
   if (!pendingIncomingCall || !currentChatId || !currentUID) return;
