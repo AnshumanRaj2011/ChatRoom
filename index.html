@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatRoom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════ LANDING / LOGIN ═══════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-bg"></div>
+  <div class="center-box">
+    <div class="logo-mark">⬡</div>
+    <h1 class="app-title">ChatRoom</h1>
+    <p class="app-sub">Encrypted · Private · Real-time</p>
+
+    <!-- Tab switcher -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Login</button>
+      <button class="auth-tab" data-tab="signup">Sign Up</button>
+    </div>
+
+    <!-- Email Login Form -->
+    <div id="tab-login" class="auth-form active">
+      <input class="field" id="login-email" type="email" placeholder="Email address" autocomplete="email" />
+      <input class="field" id="login-password" type="password" placeholder="Password" autocomplete="current-password" />
+      <button class="primary-btn full" id="btn-email-login">Login →</button>
+      <div class="divider"><span>or</span></div>
+      <button id="btn-google-signin" class="google-btn">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 19.000 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>
+        Continue with Google
+      </button>
+    </div>
+
+    <!-- Email Signup Form -->
+    <div id="tab-signup" class="auth-form">
+      <input class="field" id="signup-email" type="email" placeholder="Email address" autocomplete="email" />
+      <input class="field" id="signup-password" type="password" placeholder="Password (min 6 chars)" autocomplete="new-password" />
+      <input class="field" id="signup-confirm" type="password" placeholder="Confirm password" autocomplete="new-password" />
+      <button class="primary-btn full" id="btn-email-signup">Create Account →</button>
+    </div>
+
+    <p id="login-error" class="error-msg"></p>
+    <p class="privacy-note">🔒 Passwords are handled by Firebase Auth. We never see them.</p>
+  </div>
+</div>
+
+<!-- ═══════════ PICK USERNAME ═══════════ -->
+<div id="screen-pick-username" class="screen">
+  <div class="login-bg"></div>
+  <div class="center-box">
+    <div class="logo-mark">⬡</div>
+    <h1 class="app-title">One last step</h1>
+    <p class="app-sub">Choose your ChatRoom username</p>
+    <div id="pick-avatar" class="avatar-preview"></div>
+    <input class="field" id="pick-username-input" placeholder="e.g. coolcat_42" autocomplete="off" maxlength="20" />
+    <p class="field-hint">3–20 chars · letters, numbers, underscores</p>
+    <button class="primary-btn full" id="btn-pick-username">Let's go →</button>
+    <p id="pick-error" class="error-msg"></p>
+  </div>
+</div>
+
+<!-- ═══════════ HOME ═══════════ -->
+<div id="screen-home" class="screen">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="bar-title">⬡ ChatRoom</span>
+    </div>
+    <div class="top-actions">
+      <button id="btn-theme-toggle" class="icon-btn" title="Toggle Theme">🌙</button>
+      <button id="btn-search" class="icon-btn" title="Search">🔍</button>
+      <button id="btn-requests" class="icon-btn" title="Friend Requests">
+        📬 <span id="req-badge" class="req-badge hidden">0</span>
+      </button>
+      <div id="home-avatar" class="avatar-sm" title="My Profile"></div>
+      <button id="btn-logout" class="icon-btn danger" title="Logout">⏻</button>
+    </div>
+  </div>
+
+  <!-- Tabs: Friends / Groups / Pinned -->
+  <div class="home-tabs">
+    <button class="home-tab active" data-tab="friends">Friends</button>
+    <button class="home-tab" data-tab="pinned">📌 Pinned</button>
+    <button class="home-tab" data-tab="archived">📦 Archived</button>
+  </div>
+
+  <div id="tab-friends" class="home-tab-content active">
+    <div class="section-label">Direct Messages</div>
+    <div id="friends-list"></div>
+  </div>
+  <div id="tab-pinned" class="home-tab-content">
+    <div class="section-label">Pinned Chats</div>
+    <div id="pinned-list"></div>
+  </div>
+  <div id="tab-archived" class="home-tab-content">
+    <div class="section-label">Archived Chats</div>
+    <div id="archived-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════ MY PROFILE ═══════════ -->
+<div id="screen-profile" class="screen">
+  <div class="top-bar">
+    <button id="btn-back-profile" class="back-btn">←</button>
+    <span class="bar-title">My Profile</span>
+  </div>
+  <div class="profile-body">
+    <div id="profile-avatar-big" class="avatar-lg"></div>
+    <div id="profile-username-display" class="profile-username"></div>
+    <div id="profile-email-display" class="profile-email"></div>
+
+    <div class="settings-section">
+      <div class="settings-title">Privacy</div>
+      <div class="settings-row">
+        <span>Show Last Seen</span>
+        <label class="toggle-switch"><input type="checkbox" id="pref-last-seen" checked /><span class="toggle-track"></span></label>
+      </div>
+      <div class="settings-row">
+        <span>Show Profile to Everyone</span>
+        <label class="toggle-switch"><input type="checkbox" id="pref-public-profile" checked /><span class="toggle-track"></span></label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">Appearance</div>
+      <div class="settings-row">
+        <span>Dark Mode</span>
+        <label class="toggle-switch"><input type="checkbox" id="pref-dark-mode" checked /><span class="toggle-track"></span></label>
+      </div>
+      <div class="settings-title" style="margin-top:12px">Chat Background</div>
+      <div id="bg-picker" class="bg-picker"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-title">Account</div>
+      <button class="danger-btn full" id="btn-signout-profile">Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SEARCH ═══════════ -->
+<div id="screen-search" class="screen">
+  <div class="top-bar">
+    <button id="btn-back-search" class="back-btn">←</button>
+    <span class="bar-title">Search Users</span>
+  </div>
+  <div class="search-wrap">
+    <input id="search-input" class="field" placeholder="Type a username…" autocomplete="off" />
+  </div>
+  <div id="search-results"></div>
+</div>
+
+<!-- ═══════════ REQUESTS ═══════════ -->
+<div id="screen-requests" class="screen">
+  <div class="top-bar">
+    <button id="btn-back-requests" class="back-btn">←</button>
+    <span class="bar-title">Friend Requests</span>
+  </div>
+  <div id="request-list"></div>
+</div>
+
+<!-- ═══════════ CHAT ═══════════ -->
+<div id="screen-chat" class="screen">
+  <div class="top-bar">
+    <button id="btn-back-chat" class="back-btn">←</button>
+    <div class="chat-peer-info">
+      <div id="chat-avatar-top" class="avatar-sm"></div>
+      <div>
+        <div id="chat-username" class="bar-title chat-peer"></div>
+        <div id="chat-last-seen" class="chat-last-seen"></div>
+      </div>
+    </div>
+    <div class="top-actions" id="chat-normal-actions">
+      <button id="btn-chat-search" class="icon-btn" title="Search in chat">🔍</button>
+      <button id="btn-pin-chat" class="icon-btn" title="Pin/Unpin">📌</button>
+      <button id="btn-mute-chat" class="icon-btn" title="Mute/Unmute">🔔</button>
+      <button id="btn-archive-chat" class="icon-btn" title="Archive">📦</button>
+      <button id="btn-block-user" class="icon-btn danger" title="Block User">🚫</button>
+      <button id="btn-start-call" class="icon-btn" title="Video Call">📞</button>
+    </div>
+    <div class="top-actions hidden" id="chat-select-actions">
+      <span id="select-count" class="select-count-label">0 selected</span>
+      <button id="btn-copy-selected" class="icon-btn" title="Copy">📋</button>
+      <button id="btn-delete-me" class="icon-btn" title="Delete for me">🗑️</button>
+      <button id="btn-delete-all" class="icon-btn danger" title="Delete for all">💥</button>
+      <button id="btn-cancel-select" class="icon-btn" title="Cancel">✕</button>
+    </div>
+  </div>
+
+  <!-- In-chat search bar -->
+  <div id="chat-search-bar" class="chat-search-bar hidden">
+    <input id="chat-search-input" class="field" placeholder="Search messages…" autocomplete="off" />
+    <button id="btn-chat-search-close" class="back-btn">✕</button>
+  </div>
+
+  <div id="incoming-banner" class="incoming-banner hidden">
+    <span id="incoming-banner-label">📞 Incoming call…</span>
+    <button id="btn-banner-answer" class="primary-btn">Answer</button>
+    <button id="btn-banner-decline" class="danger-btn">Decline</button>
+  </div>
+
+  <!-- Typing indicator -->
+  <div id="typing-indicator" class="typing-indicator hidden">
+    <span id="typing-text"></span>
+    <span class="typing-dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <div id="chat-messages" class="chat-list"></div>
+
+  <!-- Emoji picker -->
+  <div id="emoji-panel" class="emoji-panel hidden">
+    <div class="emoji-grid" id="emoji-grid"></div>
+  </div>
+
+  <form id="chat-form" class="chat-form">
+    <button type="button" id="btn-emoji" class="icon-btn emoji-btn">😊</button>
+    <input id="chat-input" class="field chat-input" placeholder="Message…" autocomplete="off" />
+    <button class="primary-btn send-btn">↑</button>
+  </form>
+</div>
+
+<!-- ═══════════ CALL SCREEN ═══════════ -->
+<div id="screen-call" class="screen">
+  <div class="call-screen-inner">
+    <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
+    <div class="call-overlay-top">
+      <button id="btn-call-chat" class="call-back-btn">💬 Chat</button>
+      <div class="call-info">
+        <div id="call-peer-name" class="call-peer-name">…</div>
+        <div class="call-status-row">
+          <span id="call-status-dot" class="call-status-dot"></span>
+          <span id="call-timer" class="call-timer">00:00</span>
+        </div>
+      </div>
+    </div>
+    <div id="local-pip" class="local-pip-wrap">
+      <video id="localVideo" class="local-pip-video" autoplay playsinline muted></video>
+      <button id="btn-flip-cam" class="pip-flip-btn">🔄</button>
+    </div>
+    <div id="call-incoming-overlay" class="call-incoming-overlay hidden">
+      <p id="incoming-ring-name" class="incoming-ring-text">📞 Incoming call</p>
+      <div class="call-answer-btns">
+        <button id="btn-answer" class="answer-btn">📞 Answer</button>
+        <button id="btn-decline" class="reject-btn">📵 Decline</button>
+      </div>
+    </div>
+    <div class="call-controls-bar">
+      <button id="btn-toggle-mic"     class="call-ctrl-btn active"><span class="ctrl-icon">🎤</span><span class="ctrl-label">Mute</span></button>
+      <button id="btn-toggle-cam"     class="call-ctrl-btn active"><span class="ctrl-icon">📷</span><span class="ctrl-label">Camera</span></button>
+      <button id="btn-toggle-speaker" class="call-ctrl-btn active"><span class="ctrl-icon">🔊</span><span class="ctrl-label">Speaker</span></button>
+      <button id="btn-hangup" class="call-ctrl-btn hangup-btn"><span class="ctrl-icon">📵</span><span class="ctrl-label">End</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ CONTEXT MENU ═══════════ -->
+<div id="msg-context-menu" class="ctx-menu hidden">
+  <button id="ctx-copy"       class="ctx-item">📋 Copy</button>
+  <button id="ctx-select"     class="ctx-item">☑️ Select</button>
+  <button id="ctx-delete-me"  class="ctx-item">🗑️ Delete for Me</button>
+  <button id="ctx-delete-all" class="ctx-item ctx-danger hidden">💥 Delete for All</button>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- Feature status overlay -->
+<div id="feature-status" class="feature-status hidden">
+  <div class="feature-status-box">
+    <h2>Feature Status</h2>
+    <div id="feature-list"></div>
+    <button id="btn-close-features" class="primary-btn full" style="margin-top:16px">Close</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script type="module" src="script.js"></script>
+</body>
+</html>
